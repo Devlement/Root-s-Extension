@@ -1,0 +1,52 @@
+/* Styles de base pour Root */
+#root-mascot {
+    position: absolute !important;
+    top: 0px; 
+    left: 0px;
+    width: 64px !important; 
+    height: 64px !important;
+    object-fit: contain !important;
+    z-index: 2147483647 !important;
+    pointer-events: auto !important; 
+    cursor: pointer !important; 
+    image-rendering: pixelated !important; 
+    image-rendering: crisp-edges !important;
+    filter: drop-shadow(0px 5px 10px rgba(0,0,0,0.5)) !important; 
+    display: block !important;
+    opacity: 0 !important; 
+    /* La transition de base ne gère plus que l'opacité */
+    transition: opacity 0.5s ease-in-out !important; 
+}
+
+/* Effet miroir */
+#root-mascot.flip {
+    transform: scaleX(-1) !important;
+}
+
+/* Mise en valeur du produit gagnant */
+.root-winner-highlight {
+    outline: 4px solid #FF8C00 !important;
+    outline-offset: 4px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 0 20px rgba(255, 140, 0, 0.6) !important;
+    transition: all 0.5s ease !important;
+}
+
+.root-badge {
+    position: absolute !important;
+    background: linear-gradient(135deg, #FF8C00, #ff5722) !important;
+    color: white !important; 
+    padding: 5px 12px !important;
+    border-radius: 20px !important; 
+    font-weight: bold !important;
+    font-family: Arial, sans-serif !important; 
+    font-size: 13px !important;
+    z-index: 2147483646 !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
+    animation: bounceBadge 1s infinite alternate !important;
+}
+
+@keyframes bounceBadge {
+    from { transform: translateY(0); }
+    to { transform: translateY(-6px); }
+}

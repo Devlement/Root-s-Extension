@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "Root - Ton Compagnon Shopping",
+  "version": "0.4",
+  "description": "Root analyse les produits et te guide vers le meilleur rapport qualité/prix.",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "assets/icon16.png",
+      "48": "assets/icon48.png",
+      "128": "assets/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "css": ["content.css"],
+      "js": ["content.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/root_walk.gif",
+        "assets/root_idle.gif",
+        "assets/root_think.gif",
+        "assets/victory.mp3"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
