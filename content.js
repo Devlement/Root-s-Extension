@@ -1,4 +1,4 @@
-console.log("[Root] Script injecté. Début de l'exploration de la page...");
+console.log("[Root] Script injecté. Début de l'exploration...");
 
 const ASSETS_URL = chrome.runtime.getURL("assets/");
 const ROOT_IDLE_GIF = ASSETS_URL + "root_idle.gif";
@@ -9,17 +9,15 @@ let rootElement = null;
 let isRootActive = false;
 let isWandering = false;
 let wanderingTimeout = null;
-
-// Vitesse de Root (en pixels par seconde)
 const ROOT_SPEED = 150; 
 
-// Initialisation dès le chargement de la page
+// --- VÉRIFICATION AMAZON ---
+const isAmazon = window.location.hostname.includes("amazon.");
+
 initRoot();
 
 function initRoot() {
     createMascot();
-    
-    // Fait apparaître Root aléatoirement sur l'écran
     const startX = window.scrollX + Math.random() * (window.innerWidth - 100);
     const startY = window.scrollY + Math.random() * (window.innerHeight - 100);
     
@@ -36,20 +34,15 @@ function createMascot() {
     if (!rootElement) {
         rootElement = document.createElement('img');
         rootElement.id = 'root-mascot';
-        
         rootElement.addEventListener('click', () => {
-            // Disparaît au clic
             stopWandering();
             rootElement.style.setProperty('opacity', '0', 'important');
             setTimeout(() => {
-                if (rootElement && rootElement.parentNode) {
-                    rootElement.parentNode.removeChild(rootElement);
-                }
+                if (rootElement && rootElement.parentNode) rootElement.parentNode.removeChild(rootElement);
                 rootElement = null;
                 isRootActive = false;
             }, 500);
         });
-
         document.body.appendChild(rootElement);
     }
 }
@@ -57,7 +50,7 @@ function createMascot() {
 // === LOGIQUE DE BALADE ALÉATOIRE ===
 
 function startWandering() {
-    if (isRootActive) return; // Ne pas errer si une mission est en cours
+    if (isRootActive) return;
     isWandering = true;
     wanderLoop();
 }
@@ -65,20 +58,14 @@ function startWandering() {
 function stopWandering() {
     isWandering = false;
     clearTimeout(wanderingTimeout);
-    if (rootElement) {
-        rootElement.style.setProperty('transition', 'opacity 0.5s', 'important');
-    }
+    if (rootElement) rootElement.style.setProperty('transition', 'opacity 0.5s', 'important');
 }
 
 function wanderLoop() {
     if (!isWandering) return;
-
-    // Décide d'une action au hasard (40% marche, 30% pause, 30% réflexion)
     const action = Math.random();
-
-    if (action < 0.4) {
-        walkToRandomPoint();
-    } else if (action < 0.7) {
+    if (action < 0.4) walkToRandomPoint();
+    else if (action < 0.7) {
         rootElement.src = ROOT_IDLE_GIF;
         wanderingTimeout = setTimeout(wanderLoop, 2000 + Math.random() * 2000);
     } else {
@@ -89,8 +76,6 @@ function wanderLoop() {
 
 function walkToRandomPoint() {
     if (!isWandering || !rootElement) return;
-
-    // Détermine un point aléatoire dans l'écran visible
     const destX = window.scrollX + Math.max(0, Math.random() * (window.innerWidth - 100));
     const destY = window.scrollY + Math.max(0, Math.random() * (window.innerHeight - 100));
 
@@ -98,17 +83,13 @@ function walkToRandomPoint() {
     const startX = window.scrollX + rootRect.left;
     const startY = window.scrollY + rootRect.top;
 
-    // Flip selon la direction
     if (destX < startX) rootElement.classList.add('flip');
     else rootElement.classList.remove('flip');
 
-    // Calcul de la distance et du temps de trajet (Théorème de Pythagore)
     const distance = Math.sqrt(Math.pow(destX - startX, 2) + Math.pow(destY - startY, 2));
     const duration = distance / ROOT_SPEED;
 
     rootElement.src = ROOT_WALK_GIF;
-    
-    // Applique la transition dynamiquement pour garder une vitesse constante
     rootElement.style.setProperty('transition', `top ${duration}s linear, left ${duration}s linear, opacity 0.5s`, 'important');
 
     window.requestAnimationFrame(() => {
@@ -118,47 +99,45 @@ function walkToRandomPoint() {
 
     wanderingTimeout = setTimeout(() => {
         rootElement.src = ROOT_IDLE_GIF;
-        // Une fois arrivé, relance la boucle
         wanderingTimeout = setTimeout(wanderLoop, 500);
     }, duration * 1000);
 }
 
-// === LOGIQUE DE RECHERCHE (POPUP) ===
+// === LOGIQUE DE RECHERCHE ===
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    // BLOCAGE : Si ce n'est pas Amazon, Root refuse la mission et continue sa vie
+    if (!isAmazon) {
+        console.log("[Root] Mission refusée : Root est exclusivement programmé pour Amazon.");
+        return; 
+    }
+
     if (request.action === "start_root" && !isRootActive) {
-        // Interrompt la balade
         stopWandering();
         isRootActive = true;
-        
-        // Fait comprendre qu'il a reçu un ordre
         rootElement.src = ROOT_THINK_GIF;
         
-        // Lance la séquence après 1.5s de réflexion
         setTimeout(() => {
-            startRootSequence(request.strategy);
+            startRootSequence(request.strategy, request.keyword, request.filters);
         }, 1500);
     }
 });
 
-function startRootSequence(strategy) {
-    // Nettoie les anciens badges et encadrés de la page au cas où
+function startRootSequence(strategy, keyword, filters) {
     document.querySelectorAll('.root-winner-highlight').forEach(el => el.classList.remove('root-winner-highlight'));
     document.querySelectorAll('.root-badge').forEach(el => el.remove());
 
-    const winner = findBestProduct(strategy);
+    const winner = findBestAmazonProduct(strategy, keyword, filters);
     
     if (winner) {
         winner.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setTimeout(() => {
-            moveToTarget(winner);
-        }, 1000);
+        setTimeout(() => { moveToTarget(winner); }, 1000);
     } else {
-        console.log("[Root] Aucun produit trouvé.");
+        console.log("[Root] Aucun produit trouvé correspondant aux critères Amazon.");
         rootElement.src = ROOT_THINK_GIF;
         setTimeout(() => {
             isRootActive = false;
-            startWandering(); // Reprend sa balade si rien n'est trouvé
+            startWandering(); 
         }, 3000);
     }
 }
@@ -177,7 +156,6 @@ function moveToTarget(targetElement) {
     if (destX < startX) rootElement.classList.add('flip');
     else rootElement.classList.remove('flip');
 
-    // Calcul du temps pour la course finale (on le fait courir plus vite : x1.5)
     const distance = Math.sqrt(Math.pow(destX - startX, 2) + Math.pow(destY - startY, 2));
     const duration = distance / (ROOT_SPEED * 1.5);
 
@@ -190,52 +168,76 @@ function moveToTarget(targetElement) {
     });
 
     setTimeout(() => {
-        // Root s'arrête devant le produit
         rootElement.src = ROOT_IDLE_GIF;
         rootElement.classList.remove('flip'); 
-        
-        // On remet la mise en valeur du produit (l'encadré)
         targetElement.classList.add('root-winner-highlight');
         
+        setTimeout(() => {
+            isRootActive = false; 
+            startWandering(); 
+        }, 2000); 
+
     }, duration * 1000); 
 }
 
-function findBestProduct(strategy) {
-    const allElements = document.querySelectorAll('*');
+function findBestAmazonProduct(strategy, keyword, filters) {
+    // Spécifique Amazon : On cible les conteneurs de produits typiques pour éviter le bruit
+    const productCards = document.querySelectorAll('[data-component-type="s-search-result"], .s-result-item');
+    
     const priceRegex = /[\d\s]+[,.]?\d*/;
+    const ratingRegex = /(\d[.,]\d|\d)\s*(?:sur|\/)\s*5/i; 
     let foundProducts = [];
+    const lowerKeyword = keyword ? keyword.toLowerCase() : "";
 
-    allElements.forEach(el => {
-        if (['SCRIPT', 'STYLE', 'NOSCRIPT', 'SVG', 'IMG'].includes(el.tagName)) return;
-        const text = (el.innerText || el.textContent || "").trim();
-        if (text.includes('€') && text.length > 0 && text.length < 40) {
-            const rect = el.getBoundingClientRect();
-            if (rect.width > 0 && rect.height > 0) {
-                let match = text.match(priceRegex);
-                if (match) {
-                    let priceStr = match[0].replace(/\s/g, '').replace(',', '.');
-                    let price = parseFloat(priceStr);
-                    if (!isNaN(price) && price > 0) {
-                        const hasChildWithEuro = Array.from(el.children).some(child => (child.innerText || child.textContent || "").includes('€'));
-                        if (!hasChildWithEuro) foundProducts.push({ price: price, element: el });
-                    }
+    productCards.forEach(card => {
+        const text = (card.innerText || card.textContent || "").toLowerCase();
+        
+        // Filtre 1 : Mot clé
+        if (lowerKeyword && !text.includes(lowerKeyword)) return;
+
+        // Filtre 2 : Sponsorisé
+        if (filters.noSponsored && (text.includes("sponsorisé") || text.includes("sponsored"))) return;
+
+        // Filtre 3 : Prime Uniquement
+        const isPrime = text.includes("prime") || card.querySelector('.a-icon-prime');
+        if (filters.primeOnly && !isPrime) return;
+
+        // Filtre 4 : Notes
+        let rating = 0;
+        let ratingMatch = text.match(ratingRegex);
+        if (ratingMatch) {
+            rating = parseFloat(ratingMatch[1].replace(',', '.'));
+        }
+        if (filters.minFourStars && rating < 4.0) return;
+
+        // Recherche du prix dans cette carte
+        const priceElement = card.querySelector('.a-price .a-offscreen, .a-price-whole');
+        if (priceElement) {
+            let priceText = priceElement.innerText || priceElement.textContent;
+            let match = priceText.match(priceRegex);
+            if (match) {
+                let priceStr = match[0].replace(/\s/g, '').replace(',', '.');
+                let price = parseFloat(priceStr);
+                
+                if (!isNaN(price) && price > 0) {
+                    foundProducts.push({ price: price, rating: rating, element: card });
                 }
             }
         }
     });
 
     if (foundProducts.length === 0) return null;
-    foundProducts.sort((a, b) => a.price - b.price);
 
     let chosenProduct;
-    if (strategy === 'cheapest') chosenProduct = foundProducts[0];
-    else if (strategy === 'expensive') chosenProduct = foundProducts[foundProducts.length - 1];
-    else if (strategy === 'median') chosenProduct = foundProducts[Math.floor(foundProducts.length / 2)];
-
-    let container = chosenProduct.element;
-    while (container.parentElement && (container.offsetWidth < 150 || container.offsetHeight < 100)) {
-        container = container.parentElement;
-        if (container.tagName === 'BODY') break;
+    if (strategy === 'best_rated') {
+        foundProducts.sort((a, b) => b.rating - a.rating || a.price - b.price);
+        chosenProduct = foundProducts[0];
+    } else {
+        foundProducts.sort((a, b) => a.price - b.price);
+        if (strategy === 'cheapest') chosenProduct = foundProducts[0];
+        else if (strategy === 'expensive') chosenProduct = foundProducts[foundProducts.length - 1];
+        else if (strategy === 'median') chosenProduct = foundProducts[Math.floor(foundProducts.length / 2)];
     }
-    return container;
+
+    return chosenProduct.element;
 }

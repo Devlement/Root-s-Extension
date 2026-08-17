@@ -2,94 +2,132 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Root</title>
+    <title>Root - Amazon Expert</title>
     <style>
         :root {
-            --bg: #f5f6f7;
-            --card: #ffffff;
-            --accent: #b8860b;
-            --text: #0f1720;
-            --muted: #6b7280;
+            --primary: #FF9900; /* Orange Amazon */
+            --primary-hover: #e47911;
+            --bg-dark: #131A22; /* Bleu foncé Amazon Prime */
+            --card-bg: #232F3E;
+            --text-light: #ffffff;
+            --text-muted: #8e8e9f;
         }
         body {
-            width: 360px;
+            width: 350px;
             margin: 0;
-            padding: 18px;
+            padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
+            background-color: var(--bg-dark);
+            color: var(--text-light);
         }
-        .card {
-            background: var(--card);
-            border-radius: 12px;
-            padding: 18px;
-            box-shadow: 0 8px 24px rgba(15, 23, 32, 0.06);
-        }
-        .header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
+        .container { padding: 20px; }
+        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
         .avatar-container {
-            width: 44px; height: 44px;
-            background: linear-gradient(135deg, var(--accent), #ff8c00);
-            border-radius: 10px;
+            width: 45px; height: 45px;
+            background: linear-gradient(135deg, #FF9900, #FFC107);
+            border-radius: 12px;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 6px 18px rgba(15, 23, 32, 0.06);
-            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(255, 153, 0, 0.3);
         }
-        .avatar-container img { width: 28px; height: 28px; }
-        .title { font-size: 18px; font-weight: 700; margin: 0; }
-        .subtitle { font-size: 12px; color: var(--muted); }
+        .avatar-container img { width: 28px; height: 28px; image-rendering: pixelated; }
+        .title-wrapper { display: flex; flex-direction: column; }
+        .title { font-size: 18px; font-weight: 800; margin: 0; }
+        .subtitle { font-size: 11px; color: var(--primary); font-weight: bold; margin-top: 2px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .search-box {
+            width: 100%; box-sizing: border-box; background: var(--card-bg); border: 1px solid #333344;
+            color: white; padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 14px;
+        }
+        .search-box:focus { outline: 2px solid var(--primary); }
 
-        .description { text-align: center; margin: 18px 8px; color: var(--muted); font-size: 13px; line-height: 1.4; }
+        .section-title { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; font-weight: bold; }
 
-        .controls { display: flex; flex-direction: column; gap: 12px; }
-        .strategy-selector { display: flex; gap: 8px; }
+        /* Grille des stratégies de base */
+        .strategy-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
         .strategy-selector input { display: none; }
         .strategy-selector label {
-            flex: 1; text-align: center; padding: 8px 10px; border-radius: 8px;
-            background: #f3f4f6; color: var(--muted); cursor: pointer; font-weight: 600; font-size: 13px;
-            border: 1px solid transparent;
+            text-align: center; padding: 8px 0; font-size: 12px; font-weight: 500;
+            color: var(--text-muted); background: var(--card-bg); cursor: pointer;
+            border-radius: 6px; transition: all 0.2s ease;
         }
-        .strategy-selector input:checked + label { background: var(--accent); color: white; }
+        .strategy-selector input:checked + label { background: var(--primary); color: #131A22; font-weight: bold; }
 
-        .btn-action { width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--text); color: white; font-weight: 700; cursor: pointer; }
+        /* Panneau des options avancées (Scrollable) */
+        .advanced-options {
+            background: var(--card-bg); border-radius: 8px; padding: 10px;
+            max-height: 180px; overflow-y: auto; margin-bottom: 20px;
+        }
+        
+        /* Personnalisation de la scrollbar */
+        .advanced-options::-webkit-scrollbar { width: 6px; }
+        .advanced-options::-webkit-scrollbar-thumb { background: #4a5a6a; border-radius: 10px; }
 
-        .footer { text-align: center; margin-top: 12px; font-size: 12px; color: var(--muted); }
+        .checkbox-group { display: flex; align-items: center; margin-bottom: 10px; }
+        .checkbox-group:last-child { margin-bottom: 0; }
+        .checkbox-group input { margin-right: 10px; accent-color: var(--primary); cursor: pointer; }
+        .checkbox-group label { font-size: 13px; cursor: pointer; user-select: none; flex-grow: 1; }
+        .badge-dev { background: #4a5a6a; font-size: 9px; padding: 2px 5px; border-radius: 4px; color: white; margin-left: 5px; }
+
+        .btn-action {
+            width: 100%; background: var(--primary); color: #131A22; border: none; padding: 14px;
+            border-radius: 8px; font-size: 15px; font-weight: 800; cursor: pointer; transition: background 0.2s;
+        }
+        .btn-action:hover { background: var(--primary-hover); }
+        .warning-msg { color: #ff5555; font-size: 12px; text-align: center; display: none; margin-bottom: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="card">
+    <div class="container">
         <div class="header">
-            <div class="avatar-container">
-                <img src="assets/icon48.png" alt="Root">
-            </div>
-            <div>
+            <div class="avatar-container"><img src="assets/icon48.png" alt="Root"></div>
+            <div class="title-wrapper">
                 <h1 class="title">Root</h1>
-                <div class="subtitle">Analyse de la page</div>
+                <span class="subtitle">Amazon Expert</span>
             </div>
         </div>
 
-        <div class="description">Root analyse et compare automatiquement les produits présents sur cette page pour vous aider à trouver la meilleure option rapidement.</div>
+        <div id="not-amazon-warning" class="warning-msg">⚠️ Root est spécialisé sur Amazon !</div>
 
-        <div class="controls">
-            <div class="strategy-selector">
-                <input type="radio" id="cheapest" name="strategy" value="cheapest" checked>
-                <label for="cheapest">Moins cher</label>
+        <input type="text" id="keyword-input" class="search-box" placeholder="Chercher sur la page...">
 
-                <input type="radio" id="median" name="strategy" value="median">
-                <label for="median">Médiane</label>
-
-                <input type="radio" id="expensive" name="strategy" value="expensive">
-                <label for="expensive">Plus cher</label>
-            </div>
-
-            <button id="rescan-btn" class="btn-action">Chercher le produit</button>
+        <div class="section-title">Comportement de Root</div>
+        <div class="strategy-selector">
+            <input type="radio" id="cheapest" name="strategy" value="cheapest" checked>
+            <label for="cheapest">Moins cher</label>
+            <input type="radio" id="median" name="strategy" value="median">
+            <label for="median">Médiane</label>
+            <input type="radio" id="expensive" name="strategy" value="expensive">
+            <label for="expensive">Plus cher</label>
+            <input type="radio" id="best_rated" name="strategy" value="best_rated">
+            <label for="best_rated">Mieux noté</label>
         </div>
 
-        <div class="footer">Version 1.0 • © Root • Fait avec ❤️ par Devlément</div>
+        <div class="section-title">Filtres Amazon Avancés</div>
+        <div class="advanced-options">
+            <!-- Fonctionnalités Actives -->
+            <div class="checkbox-group"><input type="checkbox" id="opt-prime" checked><label for="opt-prime">Livraison Prime uniquement</label></div>
+            <div class="checkbox-group"><input type="checkbox" id="opt-nosponsor" checked><label for="opt-nosponsor">Ignorer les "Sponsorisés"</label></div>
+            <div class="checkbox-group"><input type="checkbox" id="opt-stars"><label for="opt-stars">Plus de 4 étoiles minimum</label></div>
+            
+            <!-- Fonctionnalités Vitrine (UI prête) -->
+            <div class="checkbox-group"><input type="checkbox" id="opt-basics"><label for="opt-basics">Amazon Basics uniquement <span class="badge-dev">BETA</span></label></div>
+            <div class="checkbox-group"><input type="checkbox" id="opt-soldbyamz"><label for="opt-soldbyamz">Vendu par Amazon (pas de tiers)</label></div>
+            <div class="checkbox-group"><input type="checkbox" id="opt-new"><label for="opt-new">Articles Neufs uniquement</label></div>
+            <div class="checkbox-group"><input type="checkbox" id="opt-warehouse"><label for="opt-warehouse">Amazon Warehouse (Occasion)</label></div>
+            <div class="checkbox-group"><input type="checkbox" id="opt-coupon"><label for="opt-coupon">Contient un Coupon/Bon de réduc.</label></div>
+            <div class="checkbox-group"><input type="checkbox" id="opt-subscribe"><label for="opt-subscribe">Prévoyez et Économisez (Abo)</label></div>
+            <div class="checkbox-group"><input type="checkbox" id="opt-flash"><label for="opt-flash">Ventes Flash uniquement</label></div>
+            <div class="checkbox-group"><input type="checkbox" id="opt-hidevideo"><label for="opt-hidevideo">Bloquer les vidéos auto-play</label></div>
+            <div class="checkbox-group"><input type="checkbox" id="opt-cleanui"><label for="opt-cleanui">Mode Minimaliste (Cacher les pubs)</label></div>
+            <div class="checkbox-group"><input type="checkbox" id="opt-gift"><label for="opt-gift">Mode Cadeau (Masquer les prix)</label></div>
+            <div class="checkbox-group"><input type="checkbox" id="opt-reviews"><label for="opt-reviews">Plus de 1000 avis</label></div>
+            <div class="checkbox-group"><input type="checkbox" id="opt-fba"><label for="opt-fba">Expédié par Amazon (FBA)</label></div>
+            <div class="checkbox-group"><input type="checkbox" id="opt-darkmode"><label for="opt-darkmode">Forcer le Dark Mode</label></div>
+            <div class="checkbox-group"><input type="checkbox" id="opt-pricekilo"><label for="opt-pricekilo">Calculer prix au Litre/Kilo</label></div>
+            <div class="checkbox-group"><input type="checkbox" id="opt-camel"><label for="opt-camel">Afficher historique (CamelCamel)</label></div>
+        </div>
+
+        <button id="rescan-btn" class="btn-action">Lancer la recherche</button>
     </div>
     <script src="popup.js"></script>
 </body>
