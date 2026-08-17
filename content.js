@@ -1,4 +1,4 @@
-console.log("[Root] Script injecté. Début de l'exploration...");
+console.log("[Rootine] Script injecté. Début de l'exploration...");
 
 const ASSETS_URL = chrome.runtime.getURL("assets/");
 const ROOT_IDLE_GIF = ASSETS_URL + "root_idle.gif";
@@ -9,9 +9,9 @@ let rootElement = null;
 let isRootActive = false;
 let isWandering = false;
 let wanderingTimeout = null;
-const ROOT_SPEED = 150; 
+const ROOT_SPEED = 150; // Vitesse de balade normale
 
-// --- VÉRIFICATION AMAZON ---
+// Vérification stricte Amazon
 const isAmazon = window.location.hostname.includes("amazon.");
 
 initRoot();
@@ -34,6 +34,8 @@ function createMascot() {
     if (!rootElement) {
         rootElement = document.createElement('img');
         rootElement.id = 'root-mascot';
+        rootElement.src = ROOT_IDLE_GIF;
+        
         rootElement.addEventListener('click', () => {
             stopWandering();
             rootElement.style.setProperty('opacity', '0', 'important');
@@ -58,7 +60,6 @@ function startWandering() {
 function stopWandering() {
     isWandering = false;
     clearTimeout(wanderingTimeout);
-    if (rootElement) rootElement.style.setProperty('transition', 'opacity 0.5s', 'important');
 }
 
 function wanderLoop() {
@@ -90,7 +91,7 @@ function walkToRandomPoint() {
     const duration = distance / ROOT_SPEED;
 
     rootElement.src = ROOT_WALK_GIF;
-    rootElement.style.setProperty('transition', `top ${duration}s linear, left ${duration}s linear, opacity 0.5s`, 'important');
+    rootElement.style.setProperty('transition', `top ${duration}s linear, left ${duration}s linear`, 'important');
 
     window.requestAnimationFrame(() => {
         rootElement.style.setProperty('left', destX + 'px', 'important');
@@ -106,11 +107,7 @@ function walkToRandomPoint() {
 // === LOGIQUE DE RECHERCHE ===
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    // BLOCAGE : Si ce n'est pas Amazon, Root refuse la mission et continue sa vie
-    if (!isAmazon) {
-        console.log("[Root] Mission refusée : Root est exclusivement programmé pour Amazon.");
-        return; 
-    }
+    if (!isAmazon) return;
 
     if (request.action === "start_root" && !isRootActive) {
         stopWandering();
@@ -124,8 +121,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 function startRootSequence(strategy, keyword, filters) {
+    // Nettoie l'ancien produit gagnant
     document.querySelectorAll('.root-winner-highlight').forEach(el => el.classList.remove('root-winner-highlight'));
-    document.querySelectorAll('.root-badge').forEach(el => el.remove());
 
     const winner = findBestAmazonProduct(strategy, keyword, filters);
     
@@ -133,7 +130,7 @@ function startRootSequence(strategy, keyword, filters) {
         winner.scrollIntoView({ behavior: 'smooth', block: 'center' });
         setTimeout(() => { moveToTarget(winner); }, 1000);
     } else {
-        console.log("[Root] Aucun produit trouvé correspondant aux critères Amazon.");
+        console.log("[Rootine] Aucun produit trouvé correspondant aux critères.");
         rootElement.src = ROOT_THINK_GIF;
         setTimeout(() => {
             isRootActive = false;
@@ -156,11 +153,13 @@ function moveToTarget(targetElement) {
     if (destX < startX) rootElement.classList.add('flip');
     else rootElement.classList.remove('flip');
 
+    // Vitesse accélérée lors de la recherche
+    const searchSpeed = ROOT_SPEED * 3;
     const distance = Math.sqrt(Math.pow(destX - startX, 2) + Math.pow(destY - startY, 2));
-    const duration = distance / (ROOT_SPEED * 1.5);
+    const duration = distance / searchSpeed;
 
     rootElement.src = ROOT_WALK_GIF;
-    rootElement.style.setProperty('transition', `top ${duration}s ease-in-out, left ${duration}s ease-in-out, opacity 0.5s`, 'important');
+    rootElement.style.setProperty('transition', `top ${duration}s ease-in-out, left ${duration}s ease-in-out`, 'important');
 
     window.requestAnimationFrame(() => {
         rootElement.style.setProperty('left', destX + 'px', 'important');
@@ -170,10 +169,12 @@ function moveToTarget(targetElement) {
     setTimeout(() => {
         rootElement.src = ROOT_IDLE_GIF;
         rootElement.classList.remove('flip'); 
+        
+        // Encadre le produit trouvé
         targetElement.classList.add('root-winner-highlight');
         
         setTimeout(() => {
-            isRootActive = false; 
+            isRootActive = false; // Remise à zéro pour accepter une nouvelle recherche
             startWandering(); 
         }, 2000); 
 
@@ -181,9 +182,7 @@ function moveToTarget(targetElement) {
 }
 
 function findBestAmazonProduct(strategy, keyword, filters) {
-    // Spécifique Amazon : On cible les conteneurs de produits typiques pour éviter le bruit
     const productCards = document.querySelectorAll('[data-component-type="s-search-result"], .s-result-item');
-    
     const priceRegex = /[\d\s]+[,.]?\d*/;
     const ratingRegex = /(\d[.,]\d|\d)\s*(?:sur|\/)\s*5/i; 
     let foundProducts = [];
@@ -192,25 +191,17 @@ function findBestAmazonProduct(strategy, keyword, filters) {
     productCards.forEach(card => {
         const text = (card.innerText || card.textContent || "").toLowerCase();
         
-        // Filtre 1 : Mot clé
         if (lowerKeyword && !text.includes(lowerKeyword)) return;
-
-        // Filtre 2 : Sponsorisé
         if (filters.noSponsored && (text.includes("sponsorisé") || text.includes("sponsored"))) return;
-
-        // Filtre 3 : Prime Uniquement
+        
         const isPrime = text.includes("prime") || card.querySelector('.a-icon-prime');
         if (filters.primeOnly && !isPrime) return;
 
-        // Filtre 4 : Notes
         let rating = 0;
         let ratingMatch = text.match(ratingRegex);
-        if (ratingMatch) {
-            rating = parseFloat(ratingMatch[1].replace(',', '.'));
-        }
+        if (ratingMatch) rating = parseFloat(ratingMatch[1].replace(',', '.'));
         if (filters.minFourStars && rating < 4.0) return;
 
-        // Recherche du prix dans cette carte
         const priceElement = card.querySelector('.a-price .a-offscreen, .a-price-whole');
         if (priceElement) {
             let priceText = priceElement.innerText || priceElement.textContent;

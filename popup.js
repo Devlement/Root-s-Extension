@@ -1,9 +1,16 @@
 document.addEventListener('DOMContentLoaded', async () => {
     let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
-    // Si on n'est pas sur Amazon, on affiche une alerte dans la popup
-    if (tab && !tab.url.includes("amazon.")) {
-        document.getElementById('not-amazon-warning').style.display = "block";
+    const amazonScreen = document.getElementById('amazon-screen');
+    const notAmazonScreen = document.getElementById('not-amazon-screen');
+
+    // Vérifie si l'URL contient "amazon"
+    if (tab && tab.url && tab.url.includes("amazon.")) {
+        amazonScreen.classList.remove('hidden');
+        amazonScreen.classList.add('block');
+    } else {
+        notAmazonScreen.classList.remove('hidden');
+        notAmazonScreen.classList.add('flex-col');
     }
 });
 
@@ -28,6 +35,7 @@ document.getElementById('rescan-btn').addEventListener('click', async () => {
             filters: options
         });
         
+        // Ferme la popup après avoir lancé Root
         window.close();
     }
 });

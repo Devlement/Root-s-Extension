@@ -2,132 +2,287 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Root - Amazon Expert</title>
+    <title>Amazon Rootine</title>
     <style>
         :root {
-            --primary: #FF9900; /* Orange Amazon */
-            --primary-hover: #e47911;
-            --bg-dark: #131A22; /* Bleu foncé Amazon Prime */
-            --card-bg: #232F3E;
-            --text-light: #ffffff;
-            --text-muted: #8e8e9f;
+            /* Palette de couleurs Amazon / Rootine */
+            --amazon-dark: #131A22;
+            --amazon-light: #232F3E;
+            --amazon-border: #333344;
+            --amazon-muted: #8e8e9f;
+            --root-orange: #FF9900;
+            --root-hover: #e47911;
+            --bg-input: #1a242f;
         }
+
+        * { box-sizing: border-box; }
+
         body {
-            width: 350px;
+            width: 360px;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-light);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--amazon-dark);
+            color: white;
+            user-select: none;
         }
-        .container { padding: 20px; }
-        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
-        .avatar-container {
-            width: 45px; height: 45px;
-            background: linear-gradient(135deg, #FF9900, #FFC107);
-            border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 15px rgba(255, 153, 0, 0.3);
+
+        .container {
+            padding: 24px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        .avatar-container img { width: 28px; height: 28px; image-rendering: pixelated; }
-        .title-wrapper { display: flex; flex-direction: column; }
-        .title { font-size: 18px; font-weight: 800; margin: 0; }
-        .subtitle { font-size: 11px; color: var(--primary); font-weight: bold; margin-top: 2px; text-transform: uppercase; letter-spacing: 1px; }
-        
+
+        /* --- En-tête avec Image --- */
+        .logo-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .logo-img {
+            height: 120px; /* Taille optimale pour rester proportionnée dans la popup */
+            object-fit: contain;
+            filter: drop-shadow(0 4px 15px rgba(255, 153, 0, 0.15));
+        }
+
+        /* --- Structure & Utilitaires --- */
+        .w-full { width: 100%; }
+        .hidden { display: none !important; }
+        .block { display: block !important; }
+        .flex-col { display: flex !important; flex-direction: column; }
+
+        .section-title {
+            font-size: 11px;
+            color: var(--amazon-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            margin-top: 15px;
+        }
+
+        /* --- Champ de recherche --- */
         .search-box {
-            width: 100%; box-sizing: border-box; background: var(--card-bg); border: 1px solid #333344;
-            color: white; padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 14px;
+            width: 100%;
+            background-color: var(--bg-input);
+            border: 1px solid var(--amazon-border);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
-        .search-box:focus { outline: 2px solid var(--primary); }
-
-        .section-title { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; font-weight: bold; }
-
-        /* Grille des stratégies de base */
-        .strategy-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
-        .strategy-selector input { display: none; }
-        .strategy-selector label {
-            text-align: center; padding: 8px 0; font-size: 12px; font-weight: 500;
-            color: var(--text-muted); background: var(--card-bg); cursor: pointer;
-            border-radius: 6px; transition: all 0.2s ease;
+        .search-box:focus {
+            outline: none;
+            border-color: var(--root-orange);
+            box-shadow: 0 0 0 2px rgba(255, 153, 0, 0.2);
         }
-        .strategy-selector input:checked + label { background: var(--primary); color: #131A22; font-weight: bold; }
+        .search-box::placeholder { color: var(--amazon-muted); }
 
-        /* Panneau des options avancées (Scrollable) */
-        .advanced-options {
-            background: var(--card-bg); border-radius: 8px; padding: 10px;
-            max-height: 180px; overflow-y: auto; margin-bottom: 20px;
+        /* --- Sélecteurs de comportement --- */
+        .strategy-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
         }
-        
-        /* Personnalisation de la scrollbar */
-        .advanced-options::-webkit-scrollbar { width: 6px; }
-        .advanced-options::-webkit-scrollbar-thumb { background: #4a5a6a; border-radius: 10px; }
-
-        .checkbox-group { display: flex; align-items: center; margin-bottom: 10px; }
-        .checkbox-group:last-child { margin-bottom: 0; }
-        .checkbox-group input { margin-right: 10px; accent-color: var(--primary); cursor: pointer; }
-        .checkbox-group label { font-size: 13px; cursor: pointer; user-select: none; flex-grow: 1; }
-        .badge-dev { background: #4a5a6a; font-size: 9px; padding: 2px 5px; border-radius: 4px; color: white; margin-left: 5px; }
-
-        .btn-action {
-            width: 100%; background: var(--primary); color: #131A22; border: none; padding: 14px;
-            border-radius: 8px; font-size: 15px; font-weight: 800; cursor: pointer; transition: background 0.2s;
+        .strategy-grid input[type="radio"] { display: none; }
+        .strategy-grid label {
+            display: block;
+            text-align: center;
+            padding: 10px 5px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--amazon-muted);
+            background-color: var(--amazon-light);
+            border: 1px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
-        .btn-action:hover { background: var(--primary-hover); }
-        .warning-msg { color: #ff5555; font-size: 12px; text-align: center; display: none; margin-bottom: 10px; font-weight: bold; }
+        .strategy-grid label:hover {
+            background-color: #2c3a4d;
+            color: white;
+        }
+        .strategy-grid input[type="radio"]:checked + label {
+            background-color: rgba(255, 153, 0, 0.1);
+            color: var(--root-orange);
+            border-color: var(--root-orange);
+        }
+
+        /* --- Panneau des Filtres (Scrollable) --- */
+        .options-container {
+            background-color: var(--amazon-light);
+            border-radius: 8px;
+            padding: 12px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid var(--amazon-border);
+        }
+        .options-container::-webkit-scrollbar { width: 6px; }
+        .options-container::-webkit-scrollbar-track { background: transparent; }
+        .options-container::-webkit-scrollbar-thumb { background: #4a5a6a; border-radius: 10px; }
+        .options-container::-webkit-scrollbar-thumb:hover { background: var(--root-orange); }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+        .checkbox-item:last-child { margin-bottom: 0; }
+        .checkbox-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--root-orange);
+            cursor: pointer;
+            margin: 0;
+        }
+        .checkbox-item span {
+            font-size: 13px;
+            color: #e2e8f0;
+            transition: color 0.2s;
+        }
+        .checkbox-item:hover span { color: white; }
+        .badge-beta {
+            background-color: #4a5a6a;
+            color: white;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        /* --- Bouton d'Action Principal --- */
+        .btn-primary {
+            width: 100%;
+            background-color: var(--root-orange);
+            color: var(--amazon-dark);
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(255, 153, 0, 0.2);
+        }
+        .btn-primary:hover {
+            background-color: var(--root-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(255, 153, 0, 0.3);
+        }
+
+        /* --- Écran d'erreur "Non Amazon" --- */
+        .error-card {
+            background-color: var(--amazon-light);
+            border: 1px solid var(--amazon-border);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        .error-icon { font-size: 40px; margin-bottom: 12px; }
+        .error-title { font-size: 16px; font-weight: bold; margin: 0 0 8px 0; color: white; }
+        .error-text { font-size: 13px; color: var(--amazon-muted); line-height: 1.5; margin: 0 0 20px 0; }
+        .btn-secondary {
+            background-color: transparent;
+            border: 2px solid var(--root-orange);
+            color: var(--root-orange);
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+        .btn-secondary:hover {
+            background-color: var(--root-orange);
+            color: var(--amazon-dark);
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <div class="avatar-container"><img src="assets/The_Goat.webp" alt="Root"></div>
-            <div class="title-wrapper">
-                <h1 class="title">Root</h1>
-                <span class="subtitle">Amazon Expert</span>
+        
+        <!-- EN-TÊTE AVEC IMAGE -->
+        <div class="logo-container">
+            <img src="assets/Amazon rootine.png" alt="Amazon Rootine" class="logo-img">
+        </div>
+
+        <!-- ÉCRAN 1 : Message d'avertissement -->
+        <div id="not-amazon-screen" class="error-card hidden">
+            <div class="error-icon">🛒</div>
+            <h2 class="error-title">Hors zone de confort</h2>
+            <p class="error-text">Tout est dans le nom, votre rootine Amazon doit avoir lieu sur Amazon</p>
+            <a href="https://www.amazon.fr" target="_blank" class="btn-secondary">Rejoindre Amazon</a>
+        </div>
+
+        <!-- ÉCRAN 2 : Interface principale de l'extension -->
+        <div id="amazon-screen" class="w-full hidden">
+            <input type="text" id="keyword-input" class="search-box" placeholder="Chercher un article précis...">
+
+            <div class="section-title">Comportement de l'assistant</div>
+            <div class="strategy-grid">
+                <div>
+                    <input type="radio" id="cheapest" name="strategy" value="cheapest" checked>
+                    <label for="cheapest">Le moins cher</label>
+                </div>
+                <div>
+                    <input type="radio" id="median" name="strategy" value="median">
+                    <label for="median">Prix médian</label>
+                </div>
+                <div>
+                    <input type="radio" id="expensive" name="strategy" value="expensive">
+                    <label for="expensive">Le plus cher</label>
+                </div>
+                <div>
+                    <input type="radio" id="best_rated" name="strategy" value="best_rated">
+                    <label for="best_rated">Le mieux noté</label>
+                </div>
             </div>
+
+            <div class="section-title">Filtres de recherche avancés</div>
+            <div class="options-container">
+                <label class="checkbox-item">
+                    <input type="checkbox" id="opt-prime" checked>
+                    <span>Livraison Prime uniquement</span>
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="opt-nosponsor" checked>
+                    <span>Ignorer les offres "Sponsorisées"</span>
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="opt-stars">
+                    <span>Sélection 4 étoiles et plus</span>
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="opt-soldbyamz">
+                    <span>Vendu et expédié par Amazon</span>
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="opt-new">
+                    <span>Articles strictement neufs</span>
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="opt-basics">
+                    <span>Amazon Basics <span class="badge-beta">BETA</span></span>
+                </label>
+            </div>
+
+            <button id="rescan-btn" class="btn-primary">Lancer la Rootine Amazon</button>
         </div>
 
-        <div id="not-amazon-warning" class="warning-msg">⚠️ Root est spécialisé sur Amazon !</div>
-
-        <input type="text" id="keyword-input" class="search-box" placeholder="Chercher sur la page...">
-
-        <div class="section-title">Comportement de Root</div>
-        <div class="strategy-selector">
-            <input type="radio" id="cheapest" name="strategy" value="cheapest" checked>
-            <label for="cheapest">Moins cher</label>
-            <input type="radio" id="median" name="strategy" value="median">
-            <label for="median">Médiane</label>
-            <input type="radio" id="expensive" name="strategy" value="expensive">
-            <label for="expensive">Plus cher</label>
-            <input type="radio" id="best_rated" name="strategy" value="best_rated">
-            <label for="best_rated">Mieux noté</label>
-        </div>
-
-        <div class="section-title">Filtres Amazon Avancés</div>
-        <div class="advanced-options">
-            <!-- Fonctionnalités Actives -->
-            <div class="checkbox-group"><input type="checkbox" id="opt-prime" checked><label for="opt-prime">Livraison Prime uniquement</label></div>
-            <div class="checkbox-group"><input type="checkbox" id="opt-nosponsor" checked><label for="opt-nosponsor">Ignorer les "Sponsorisés"</label></div>
-            <div class="checkbox-group"><input type="checkbox" id="opt-stars"><label for="opt-stars">Plus de 4 étoiles minimum</label></div>
-            
-            <!-- Fonctionnalités Vitrine (UI prête) -->
-            <div class="checkbox-group"><input type="checkbox" id="opt-basics"><label for="opt-basics">Amazon Basics uniquement <span class="badge-dev">BETA</span></label></div>
-            <div class="checkbox-group"><input type="checkbox" id="opt-soldbyamz"><label for="opt-soldbyamz">Vendu par Amazon (pas de tiers)</label></div>
-            <div class="checkbox-group"><input type="checkbox" id="opt-new"><label for="opt-new">Articles Neufs uniquement</label></div>
-            <div class="checkbox-group"><input type="checkbox" id="opt-warehouse"><label for="opt-warehouse">Amazon Warehouse (Occasion)</label></div>
-            <div class="checkbox-group"><input type="checkbox" id="opt-coupon"><label for="opt-coupon">Contient un Coupon/Bon de réduc.</label></div>
-            <div class="checkbox-group"><input type="checkbox" id="opt-subscribe"><label for="opt-subscribe">Prévoyez et Économisez (Abo)</label></div>
-            <div class="checkbox-group"><input type="checkbox" id="opt-flash"><label for="opt-flash">Ventes Flash uniquement</label></div>
-            <div class="checkbox-group"><input type="checkbox" id="opt-hidevideo"><label for="opt-hidevideo">Bloquer les vidéos auto-play</label></div>
-            <div class="checkbox-group"><input type="checkbox" id="opt-cleanui"><label for="opt-cleanui">Mode Minimaliste (Cacher les pubs)</label></div>
-            <div class="checkbox-group"><input type="checkbox" id="opt-gift"><label for="opt-gift">Mode Cadeau (Masquer les prix)</label></div>
-            <div class="checkbox-group"><input type="checkbox" id="opt-reviews"><label for="opt-reviews">Plus de 1000 avis</label></div>
-            <div class="checkbox-group"><input type="checkbox" id="opt-fba"><label for="opt-fba">Expédié par Amazon (FBA)</label></div>
-            <div class="checkbox-group"><input type="checkbox" id="opt-darkmode"><label for="opt-darkmode">Forcer le Dark Mode</label></div>
-            <div class="checkbox-group"><input type="checkbox" id="opt-pricekilo"><label for="opt-pricekilo">Calculer prix au Litre/Kilo</label></div>
-            <div class="checkbox-group"><input type="checkbox" id="opt-camel"><label for="opt-camel">Afficher historique (CamelCamel)</label></div>
-        </div>
-
-        <button id="rescan-btn" class="btn-action">Lancer la recherche</button>
     </div>
     <script src="popup.js"></script>
 </body>
