@@ -3,214 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>Amazon Rootine</title>
-    <style>
-        :root {
-            /* Palette de couleurs Amazon / Rootine */
-            --amazon-dark: #131A22;
-            --amazon-light: #232F3E;
-            --amazon-border: #333344;
-            --amazon-muted: #8e8e9f;
-            --root-orange: #FF9900;
-            --root-hover: #e47911;
-            --bg-input: #1a242f;
-        }
-
-        * { box-sizing: border-box; }
-
-        body {
-            width: 360px;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--amazon-dark);
-            color: white;
-            user-select: none;
-        }
-
-        .container {
-            padding: 24px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        /* --- En-tête avec Image --- */
-        .logo-container {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            margin-bottom: 24px;
-            position: relative;
-        }
-
-        .logo-img {
-            height: 120px; /* Taille optimale pour rester proportionnée dans la popup */
-            object-fit: contain;
-            filter: drop-shadow(0 4px 15px rgba(255, 153, 0, 0.15));
-        }
-
-        /* --- Structure & Utilitaires --- */
-        .w-full { width: 100%; }
-        .hidden { display: none !important; }
-        .block { display: block !important; }
-        .flex-col { display: flex !important; flex-direction: column; }
-
-        .section-title {
-            font-size: 11px;
-            color: var(--amazon-muted);
-            text-transform: uppercase;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            margin-bottom: 10px;
-            margin-top: 15px;
-        }
-
-        /* --- Champ de recherche --- */
-        .search-box {
-            width: 100%;
-            background-color: var(--bg-input);
-            border: 1px solid var(--amazon-border);
-            color: white;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        .search-box:focus {
-            outline: none;
-            border-color: var(--root-orange);
-            box-shadow: 0 0 0 2px rgba(255, 153, 0, 0.2);
-        }
-        .search-box::placeholder { color: var(--amazon-muted); }
-
-        /* --- Sélecteurs de comportement --- */
-        .strategy-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-        .strategy-grid input[type="radio"] { display: none; }
-        .strategy-grid label {
-            display: block;
-            text-align: center;
-            padding: 10px 5px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--amazon-muted);
-            background-color: var(--amazon-light);
-            border: 1px solid transparent;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .strategy-grid label:hover {
-            background-color: #2c3a4d;
-            color: white;
-        }
-        .strategy-grid input[type="radio"]:checked + label {
-            background-color: rgba(255, 153, 0, 0.1);
-            color: var(--root-orange);
-            border-color: var(--root-orange);
-        }
-
-        /* --- Panneau des Filtres (Scrollable) --- */
-        .options-container {
-            background-color: var(--amazon-light);
-            border-radius: 8px;
-            padding: 12px;
-            max-height: 150px;
-            overflow-y: auto;
-            border: 1px solid var(--amazon-border);
-        }
-        .options-container::-webkit-scrollbar { width: 6px; }
-        .options-container::-webkit-scrollbar-track { background: transparent; }
-        .options-container::-webkit-scrollbar-thumb { background: #4a5a6a; border-radius: 10px; }
-        .options-container::-webkit-scrollbar-thumb:hover { background: var(--root-orange); }
-
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 12px;
-            cursor: pointer;
-        }
-        .checkbox-item:last-child { margin-bottom: 0; }
-        .checkbox-item input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            accent-color: var(--root-orange);
-            cursor: pointer;
-            margin: 0;
-        }
-        .checkbox-item span {
-            font-size: 13px;
-            color: #e2e8f0;
-            transition: color 0.2s;
-        }
-        .checkbox-item:hover span { color: white; }
-        .badge-beta {
-            background-color: #4a5a6a;
-            color: white;
-            font-size: 9px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: bold;
-            margin-left: 5px;
-        }
-
-        /* --- Bouton d'Action Principal --- */
-        .btn-primary {
-            width: 100%;
-            background-color: var(--root-orange);
-            color: var(--amazon-dark);
-            border: none;
-            padding: 14px;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 800;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 20px;
-            box-shadow: 0 4px 15px rgba(255, 153, 0, 0.2);
-        }
-        .btn-primary:hover {
-            background-color: var(--root-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(255, 153, 0, 0.3);
-        }
-
-        /* --- Écran d'erreur "Non Amazon" --- */
-        .error-card {
-            background-color: var(--amazon-light);
-            border: 1px solid var(--amazon-border);
-            border-radius: 12px;
-            padding: 24px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-        }
-        .error-icon { font-size: 40px; margin-bottom: 12px; }
-        .error-title { font-size: 16px; font-weight: bold; margin: 0 0 8px 0; color: white; }
-        .error-text { font-size: 13px; color: var(--amazon-muted); line-height: 1.5; margin: 0 0 20px 0; }
-        .btn-secondary {
-            background-color: transparent;
-            border: 2px solid var(--root-orange);
-            color: var(--root-orange);
-            text-decoration: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 14px;
-            transition: all 0.2s;
-            display: inline-block;
-        }
-        .btn-secondary:hover {
-            background-color: var(--root-orange);
-            color: var(--amazon-dark);
-        }
-    </style>
+    <link rel="stylesheet" href="popup.css">
 </head>
 <body>
     <div class="container">
@@ -280,7 +73,16 @@
                 </label>
             </div>
 
-            <button id="rescan-btn" class="btn-primary">Lancer l'analyse Rootine</button>
+            <!-- Interrupteur pour la mascotte -->
+            <div class="toggle-container">
+                <span class="toggle-label">Mode Balade (Mascotte)</span>
+                <label class="switch">
+                    <input type="checkbox" id="summon-toggle">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
+            <button id="rescan-btn" class="btn-primary" style="margin-top: 16px;">Lancer l'analyse Rootine</button>
         </div>
 
     </div>

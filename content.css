@@ -15,7 +15,7 @@
     z-index: 999999 !important;
     pointer-events: auto !important;
     cursor: pointer !important;
-    width: 64px !important; /* Ajuste la taille si besoin */
+    width: 64px !important; 
     height: auto !important;
     image-rendering: pixelated !important;
     opacity: 0;

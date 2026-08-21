@@ -1,4 +1,4 @@
-console.log("[Rootine] Script injecté. Début de l'exploration...");
+console.log("[Rootine] Script prêt. En attente d'ordres...");
 
 const ASSETS_URL = chrome.runtime.getURL("assets/");
 const ROOT_IDLE_GIF = ASSETS_URL + "root_idle.gif";
@@ -9,14 +9,21 @@ let rootElement = null;
 let isRootActive = false;
 let isWandering = false;
 let wanderingTimeout = null;
-const ROOT_SPEED = 150; // Vitesse de balade normale
+const ROOT_SPEED = 150; 
 
-// Vérification stricte Amazon
 const isAmazon = window.location.hostname.includes("amazon.");
 
-initRoot();
+// Vérification de la mémoire au chargement de la page
+if (isAmazon) {
+    chrome.storage.local.get(['rootWanderingEnabled'], (result) => {
+        if (result.rootWanderingEnabled) {
+            initRoot();
+        }
+    });
+}
 
 function initRoot() {
+    if (rootElement) return;
     createMascot();
     const startX = window.scrollX + Math.random() * (window.innerWidth - 100);
     const startY = window.scrollY + Math.random() * (window.innerHeight - 100);
@@ -27,7 +34,7 @@ function initRoot() {
     setTimeout(() => {
         rootElement.style.setProperty('opacity', '1', 'important');
         startWandering();
-    }, 500);
+    }, 100);
 }
 
 function createMascot() {
@@ -37,19 +44,43 @@ function createMascot() {
         rootElement.src = ROOT_IDLE_GIF;
         
         rootElement.addEventListener('click', () => {
-            stopWandering();
-            rootElement.style.setProperty('opacity', '0', 'important');
-            setTimeout(() => {
-                if (rootElement && rootElement.parentNode) rootElement.parentNode.removeChild(rootElement);
-                rootElement = null;
-                isRootActive = false;
-            }, 500);
+            removeMascot();
+            chrome.storage.local.set({ rootWanderingEnabled: false });
         });
         document.body.appendChild(rootElement);
     }
 }
 
-// === LOGIQUE DE BALADE ALÉATOIRE ===
+// CORRECTION 2 : Fonction pour figer Root instantanément
+function freezePosition() {
+    if (!rootElement) return;
+    
+    // On calcule sa position exacte sur l'écran au pixel près
+    const rect = rootElement.getBoundingClientRect();
+    const currentX = window.scrollX + rect.left;
+    const currentY = window.scrollY + rect.top;
+
+    // On retire l'effet de glissement (transition) et on l'ancre à sa position
+    rootElement.style.setProperty('transition', 'none', 'important');
+    rootElement.style.setProperty('left', currentX + 'px', 'important');
+    rootElement.style.setProperty('top', currentY + 'px', 'important');
+}
+
+function removeMascot() {
+    stopWandering();
+    if (rootElement) {
+        // On remet une transition uniquement pour qu'il disparaisse en douceur
+        rootElement.style.setProperty('transition', 'opacity 0.5s ease', 'important');
+        rootElement.style.setProperty('opacity', '0', 'important');
+        setTimeout(() => {
+            if (rootElement && rootElement.parentNode) {
+                rootElement.parentNode.removeChild(rootElement);
+            }
+            rootElement = null;
+            isRootActive = false;
+        }, 500);
+    }
+}
 
 function startWandering() {
     if (isRootActive) return;
@@ -60,6 +91,7 @@ function startWandering() {
 function stopWandering() {
     isWandering = false;
     clearTimeout(wanderingTimeout);
+    freezePosition(); // Stoppe net le déplacement physique
 }
 
 function wanderLoop() {
@@ -99,20 +131,34 @@ function walkToRandomPoint() {
     });
 
     wanderingTimeout = setTimeout(() => {
-        rootElement.src = ROOT_IDLE_GIF;
-        wanderingTimeout = setTimeout(wanderLoop, 500);
+        if (isWandering && rootElement) {
+            rootElement.src = ROOT_IDLE_GIF;
+            freezePosition(); // Le fige bien à la fin du trajet
+            wanderingTimeout = setTimeout(wanderLoop, 500);
+        }
     }, duration * 1000);
 }
-
-// === LOGIQUE DE RECHERCHE ===
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (!isAmazon) return;
 
+    if (request.action === "toggle_wandering") {
+        if (request.enabled) {
+            initRoot();
+        } else {
+            removeMascot();
+        }
+        return;
+    }
+
     if (request.action === "start_root" && !isRootActive) {
-        stopWandering();
+        if (!rootElement) {
+            initRoot();
+        }
+
+        stopWandering(); // Stop et fige l'élément
         isRootActive = true;
-        rootElement.src = ROOT_THINK_GIF;
+        rootElement.src = ROOT_THINK_GIF; // Ne glissera plus car la position est figée !
         
         setTimeout(() => {
             startRootSequence(request.strategy, request.keyword, request.filters);
@@ -121,9 +167,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 function startRootSequence(strategy, keyword, filters) {
-    // Nettoie l'ancien produit gagnant
     document.querySelectorAll('.root-winner-highlight').forEach(el => el.classList.remove('root-winner-highlight'));
-
     const winner = findBestAmazonProduct(strategy, keyword, filters);
     
     if (winner) {
@@ -153,7 +197,6 @@ function moveToTarget(targetElement) {
     if (destX < startX) rootElement.classList.add('flip');
     else rootElement.classList.remove('flip');
 
-    // Vitesse accélérée lors de la recherche
     const searchSpeed = ROOT_SPEED * 3;
     const distance = Math.sqrt(Math.pow(destX - startX, 2) + Math.pow(destY - startY, 2));
     const duration = distance / searchSpeed;
@@ -167,14 +210,15 @@ function moveToTarget(targetElement) {
     });
 
     setTimeout(() => {
+        if (!rootElement) return;
         rootElement.src = ROOT_IDLE_GIF;
         rootElement.classList.remove('flip'); 
+        freezePosition(); // Stoppe le mouvement net
         
-        // Encadre le produit trouvé
         targetElement.classList.add('root-winner-highlight');
         
         setTimeout(() => {
-            isRootActive = false; // Remise à zéro pour accepter une nouvelle recherche
+            isRootActive = false;
             startWandering(); 
         }, 2000); 
 
