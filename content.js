@@ -226,13 +226,18 @@ function moveToTarget(targetElement) {
 }
 
 function findBestAmazonProduct(strategy, keyword, filters) {
-    const productCards = document.querySelectorAll('[data-component-type="s-search-result"], .s-result-item');
+    // CORRECTION 1 : On cible STRICTEMENT les résultats de recherche principaux d'Amazon
+    const productCards = document.querySelectorAll('[data-component-type="s-search-result"]');
     const priceRegex = /[\d\s]+[,.]?\d*/;
     const ratingRegex = /(\d[.,]\d|\d)\s*(?:sur|\/)\s*5/i; 
     let foundProducts = [];
     const lowerKeyword = keyword ? keyword.toLowerCase() : "";
 
     productCards.forEach(card => {
+        // CORRECTION 2 : On ignore les éléments invisibles ou cachés en haut de page
+        const rect = card.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
+
         const text = (card.innerText || card.textContent || "").toLowerCase();
         
         if (lowerKeyword && !text.includes(lowerKeyword)) return;
