@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         notAmazonScreen.classList.add('flex-col');
     }
 
-    // --- Gestion de l'interrupteur ---
+    // --- Gestion de l'interrupteur (accessible partout) ---
     const summonToggle = document.getElementById('summon-toggle');
     
     chrome.storage.local.get(['rootWanderingEnabled'], (result) => {
@@ -21,14 +21,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     summonToggle.addEventListener('change', async (e) => {
         const isEnabled = e.target.checked;
+        
+        // On sauvegarde le choix en mémoire (fonctionne sur n'importe quel site)
         chrome.storage.local.set({ rootWanderingEnabled: isEnabled });
         
-        // CORRECTION 1 : On cible l'onglet actif au moment précis du clic
         let [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (currentTab) {
+            // On essaie d'avertir la page actuelle. 
+            // Si on n'est pas sur Amazon, le script de la page ne répondra pas, on ignore l'erreur.
             chrome.tabs.sendMessage(currentTab.id, { 
                 action: "toggle_wandering", 
                 enabled: isEnabled 
+            }).catch(() => {
+                console.log("Choix sauvegardé en attente d'aller sur Amazon.");
             });
         }
     });
@@ -44,7 +49,6 @@ document.getElementById('rescan-btn').addEventListener('click', async () => {
         minFourStars: document.getElementById('opt-stars').checked
     };
 
-    // On cible également l'onglet de manière sécurisée pour le lancement
     let [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (currentTab) {
         chrome.tabs.sendMessage(currentTab.id, { 

@@ -13,7 +13,16 @@
             <img src="assets/Amazon rootine.png" alt="Amazon Rootine" class="logo-img">
         </div>
 
-        <!-- ÉCRAN 1 : Message d'avertissement -->
+        <!-- NOUVEAU PLACEMENT : Interrupteur global toujours visible -->
+        <div class="toggle-container" style="margin-top: 0; margin-bottom: 24px;">
+            <span class="toggle-label">Mode Balade</span>
+            <label class="switch">
+                <input type="checkbox" id="summon-toggle">
+                <span class="slider round"></span>
+            </label>
+        </div>
+
+        <!-- ÉCRAN 1 : Message d'avertissement (Hors Amazon) -->
         <div id="not-amazon-screen" class="error-card hidden">
             <div class="error-icon">🛒</div>
             <h2 class="error-title">Hors zone de confort</h2>
@@ -21,11 +30,11 @@
             <a href="https://www.amazon.fr" target="_blank" class="btn-secondary">Rejoindre Amazon</a>
         </div>
 
-        <!-- ÉCRAN 2 : Interface principale de l'extension -->
+        <!-- ÉCRAN 2 : Interface principale de l'extension (Sur Amazon) -->
         <div id="amazon-screen" class="w-full hidden">
             <input type="text" id="keyword-input" class="search-box" placeholder="Chercher un article précis...">
 
-            <div class="section-title">Comportement de Root</div>
+            <div class="section-title">Comportement de l'assistant</div>
             <div class="strategy-grid">
                 <div>
                     <input type="radio" id="cheapest" name="strategy" value="cheapest" checked>
@@ -73,16 +82,7 @@
                 </label>
             </div>
 
-            <!-- Interrupteur pour la mascotte -->
-            <div class="toggle-container">
-                <span class="toggle-label">Mode Balade</span>
-                <label class="switch">
-                    <input type="checkbox" id="summon-toggle">
-                    <span class="slider round"></span>
-                </label>
-            </div>
-
-            <button id="rescan-btn" class="btn-primary" style="margin-top: 16px;">Lancer votre rootine Amazon</button>
+            <button id="rescan-btn" class="btn-primary" style="margin-top: 16px;">Lancer votre rootine amazon</button>
         </div>
 
     </div>

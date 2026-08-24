@@ -13,14 +13,12 @@ const ROOT_SPEED = 150;
 
 const isAmazon = window.location.hostname.includes("amazon.");
 
-// Vérification de la mémoire au chargement de la page
-if (isAmazon) {
-    chrome.storage.local.get(['rootWanderingEnabled'], (result) => {
-        if (result.rootWanderingEnabled) {
-            initRoot();
-        }
-    });
-}
+// MODIFICATION : Root lit la mémoire sur TOUS les sites web pour savoir s'il doit apparaître.
+chrome.storage.local.get(['rootWanderingEnabled'], (result) => {
+    if (result.rootWanderingEnabled) {
+        initRoot();
+    }
+});
 
 function initRoot() {
     if (rootElement) return;
@@ -51,16 +49,13 @@ function createMascot() {
     }
 }
 
-// CORRECTION 2 : Fonction pour figer Root instantanément
 function freezePosition() {
     if (!rootElement) return;
     
-    // On calcule sa position exacte sur l'écran au pixel près
     const rect = rootElement.getBoundingClientRect();
     const currentX = window.scrollX + rect.left;
     const currentY = window.scrollY + rect.top;
 
-    // On retire l'effet de glissement (transition) et on l'ancre à sa position
     rootElement.style.setProperty('transition', 'none', 'important');
     rootElement.style.setProperty('left', currentX + 'px', 'important');
     rootElement.style.setProperty('top', currentY + 'px', 'important');
@@ -69,7 +64,6 @@ function freezePosition() {
 function removeMascot() {
     stopWandering();
     if (rootElement) {
-        // On remet une transition uniquement pour qu'il disparaisse en douceur
         rootElement.style.setProperty('transition', 'opacity 0.5s ease', 'important');
         rootElement.style.setProperty('opacity', '0', 'important');
         setTimeout(() => {
@@ -91,7 +85,7 @@ function startWandering() {
 function stopWandering() {
     isWandering = false;
     clearTimeout(wanderingTimeout);
-    freezePosition(); // Stoppe net le déplacement physique
+    freezePosition(); 
 }
 
 function wanderLoop() {
@@ -133,14 +127,14 @@ function walkToRandomPoint() {
     wanderingTimeout = setTimeout(() => {
         if (isWandering && rootElement) {
             rootElement.src = ROOT_IDLE_GIF;
-            freezePosition(); // Le fige bien à la fin du trajet
+            freezePosition(); 
             wanderingTimeout = setTimeout(wanderLoop, 500);
         }
     }, duration * 1000);
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (!isAmazon) return;
+    // MODIFICATION : On a retiré le blocage d'Amazon ici pour que l'interrupteur marche partout.
 
     if (request.action === "toggle_wandering") {
         if (request.enabled) {
@@ -152,13 +146,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     if (request.action === "start_root" && !isRootActive) {
+        // SÉCURITÉ : Par contre, le scan des prix ne se lance QUE sur Amazon.
+        if (!isAmazon) return;
+
         if (!rootElement) {
             initRoot();
         }
 
-        stopWandering(); // Stop et fige l'élément
+        stopWandering(); 
         isRootActive = true;
-        rootElement.src = ROOT_THINK_GIF; // Ne glissera plus car la position est figée !
+        rootElement.src = ROOT_THINK_GIF; 
         
         setTimeout(() => {
             startRootSequence(request.strategy, request.keyword, request.filters);
@@ -213,7 +210,7 @@ function moveToTarget(targetElement) {
         if (!rootElement) return;
         rootElement.src = ROOT_IDLE_GIF;
         rootElement.classList.remove('flip'); 
-        freezePosition(); // Stoppe le mouvement net
+        freezePosition(); 
         
         targetElement.classList.add('root-winner-highlight');
         
@@ -226,7 +223,6 @@ function moveToTarget(targetElement) {
 }
 
 function findBestAmazonProduct(strategy, keyword, filters) {
-    // CORRECTION 1 : On cible STRICTEMENT les résultats de recherche principaux d'Amazon
     const productCards = document.querySelectorAll('[data-component-type="s-search-result"]');
     const priceRegex = /[\d\s]+[,.]?\d*/;
     const ratingRegex = /(\d[.,]\d|\d)\s*(?:sur|\/)\s*5/i; 
@@ -234,7 +230,6 @@ function findBestAmazonProduct(strategy, keyword, filters) {
     const lowerKeyword = keyword ? keyword.toLowerCase() : "";
 
     productCards.forEach(card => {
-        // CORRECTION 2 : On ignore les éléments invisibles ou cachés en haut de page
         const rect = card.getBoundingClientRect();
         if (rect.width === 0 || rect.height === 0) return;
 
