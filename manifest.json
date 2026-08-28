@@ -11,6 +11,9 @@
   "host_permissions": [
     "<all_urls>"
   ],
+  "background": {
+    "scripts": ["background.js"]
+},
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

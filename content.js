@@ -1,4 +1,4 @@
-console.log("[Rootine] Script prêt. En attente d'ordres...");
+console.log("[Rootine] Script prêt avec roue d'actions !");
 
 const ASSETS_URL = chrome.runtime.getURL("assets/");
 const ROOT_IDLE_GIF = ASSETS_URL + "root_idle.gif";
@@ -6,23 +6,45 @@ const ROOT_WALK_GIF = ASSETS_URL + "root_walk.gif";
 const ROOT_THINK_GIF = ASSETS_URL + "root_think.gif";
 
 let rootElement = null;
+let wheelMenuElement = null;
 let isRootActive = false;
 let isWandering = false;
 let wanderingTimeout = null;
-const ROOT_SPEED = 150; 
+let isCleanModeActive = false;
+let mouseX = 0;
+let mouseY = 0;
+let isFollowingMouse = false;
+let followInterval = null;
 
+// Écoute en permanence la position de la souris sur la page
+document.addEventListener('mousemove', (e) => {
+    mouseX = window.scrollX + e.clientX;
+    mouseY = window.scrollY + e.clientY;
+});
+
+const ROOT_SPEED = 150; 
 const isAmazon = window.location.hostname.includes("amazon.");
 
-// MODIFICATION : Root lit la mémoire sur TOUS les sites web pour savoir s'il doit apparaître.
+// On attend que la page soit prête avant de lancer Root
 chrome.storage.local.get(['rootWanderingEnabled'], (result) => {
     if (result.rootWanderingEnabled) {
-        initRoot();
+        safeInitRoot();
     }
 });
+
+function safeInitRoot() {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initRoot);
+    } else {
+        initRoot();
+    }
+}
 
 function initRoot() {
     if (rootElement) return;
     createMascot();
+    createWheelMenu();
+    
     const startX = window.scrollX + Math.random() * (window.innerWidth - 100);
     const startY = window.scrollY + Math.random() * (window.innerHeight - 100);
     
@@ -41,43 +63,280 @@ function createMascot() {
         rootElement.id = 'root-mascot';
         rootElement.src = ROOT_IDLE_GIF;
         
-        rootElement.addEventListener('click', () => {
-            removeMascot();
-            chrome.storage.local.set({ rootWanderingEnabled: false });
+        // Règles CSS de base
+        rootElement.style.position = 'absolute';
+        rootElement.style.zIndex = '999999';
+        rootElement.style.cursor = 'pointer';
+        
+        // On force la taille de Root ici !
+        rootElement.style.width = '80px'; 
+        rootElement.style.height = 'auto'; 
+        
+        // Règle un éventuel bug de lissage d'image sur les GIF pixel art
+        rootElement.style.imageRendering = 'pixelated'; 
+        
+        rootElement.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleWheelMenu();
         });
+
         document.body.appendChild(rootElement);
     }
 }
 
-function freezePosition() {
+// --- CRÉATION DE LA ROUE D'ACTIONS ---
+function createWheelMenu() {
+    if (wheelMenuElement) return;
+
+    wheelMenuElement = document.createElement('div');
+    wheelMenuElement.id = 'root-wheel-menu';
+    
+    // Le conteneur principal devient lui-même la boîte "flex" indestructible
+    wheelMenuElement.style.setProperty('position', 'fixed', 'important');
+    wheelMenuElement.style.setProperty('display', 'none', 'important'); 
+    wheelMenuElement.style.setProperty('z-index', '2147483647', 'important');
+    wheelMenuElement.style.setProperty('background', '#1a1a1a', 'important');
+    wheelMenuElement.style.setProperty('border', '2px solid #ffffff', 'important');
+    wheelMenuElement.style.setProperty('border-radius', '8px', 'important');
+    wheelMenuElement.style.setProperty('padding', '6px', 'important');
+    wheelMenuElement.style.setProperty('gap', '6px', 'important');
+    wheelMenuElement.style.setProperty('box-shadow', '0 4px 10px rgba(0,0,0,0.5)', 'important');
+    wheelMenuElement.style.setProperty('transition', 'opacity 0.2s ease', 'important');
+
+    // On supprime la <div> intermédiaire qui causait le bug d'écrasement
+    wheelMenuElement.innerHTML = `
+        <button class="root-wheel-btn" data-action="follow" title="Suivre la souris">
+            <svg width="20" height="20" viewBox="0 0 10 10" style="image-rendering: pixelated; shape-rendering: crispEdges;"><path d="M1 1h2v1H1zM1 2h3v1H1zM1 3h4v1H1zM1 4h5v1H1zM1 5h6v1H1zM1 6h4v1H1zM1 7h2v1H1zM4 7h1v1H4zM5 8h1v1H5z" fill="#FFFFFF"/></svg>
+        </button>
+        <button class="root-wheel-btn" data-action="clean" title="Mode Nettoyeur">
+            <svg width="20" height="20" viewBox="0 0 10 10" style="image-rendering: pixelated; shape-rendering: crispEdges;"><path d="M1 1h2v2H1zM7 1h2v2H7zM3 3h4v2H3zM1 7h2v2H1zM7 7h2v2H7z" fill="#FFFFFF"/></svg>
+        </button>
+        <button class="root-wheel-btn" data-action="tp" title="Changer de place">
+            <svg width="20" height="20" viewBox="0 0 10 10" style="image-rendering: pixelated; shape-rendering: crispEdges;"><path d="M4 1h2v2H4zM1 4h2v2H1zM7 4h2v2H7zM4 7h2v2H4zM2 2h1v1H2zM7 2h1v1H7zM2 7h1v1H2zM7 7h1v1H7z" fill="#FFFFFF"/></svg>
+        </button>
+        <button class="root-wheel-btn" data-action="hide" title="Faire disparaître Root">
+            <svg width="20" height="20" viewBox="0 0 10 10" style="image-rendering: pixelated; shape-rendering: crispEdges;"><path d="M1 1h2v2H1zM7 1h2v2H7zM4 4h2v2H4zM1 7h2v2H1zM7 7h2v2H7z" fill="#FFFFFF"/></svg>
+        </button>
+    `;
+
+    document.body.appendChild(wheelMenuElement);
+
+    // On forge chaque bouton en JavaScript pour éviter que le site Web ne les modifie
+    wheelMenuElement.querySelectorAll('.root-wheel-btn').forEach(btn => {
+        btn.style.setProperty('background', '#2a2a2a', 'important');
+        btn.style.setProperty('border', '1px solid #ffffff', 'important');
+        btn.style.setProperty('border-radius', '4px', 'important');
+        btn.style.setProperty('width', '36px', 'important');
+        btn.style.setProperty('height', '36px', 'important');
+        btn.style.setProperty('display', 'flex', 'important');
+        btn.style.setProperty('align-items', 'center', 'important');
+        btn.style.setProperty('justify-content', 'center', 'important');
+        btn.style.setProperty('cursor', 'pointer', 'important');
+        btn.style.setProperty('margin', '0', 'important');
+        btn.style.setProperty('padding', '0', 'important');
+        btn.style.setProperty('flex-shrink', '0', 'important'); // Empêche le bouton de s'écraser
+
+        btn.addEventListener('mouseenter', () => btn.style.setProperty('background', '#444444', 'important'));
+        btn.addEventListener('mouseleave', () => btn.style.setProperty('background', '#2a2a2a', 'important'));
+
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const action = btn.getAttribute('data-action');
+            executeAction(action);
+            closeWheelMenu();
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        const isMascot = e.target.id === 'root-mascot';
+        const isMenu = wheelMenuElement.contains(e.target);
+        if (!isMascot && !isMenu) {
+            closeWheelMenu();
+        }
+    });
+}
+
+function toggleWheelMenu() {
+    if (!wheelMenuElement || !rootElement) return;
+    
+    // On vérifie si c'est affiché en flex
+    const isVisible = wheelMenuElement.style.getPropertyValue('display') === 'flex';
+    
+    if (isVisible) {
+        closeWheelMenu();
+    } else {
+        stopWandering();
+        const rect = rootElement.getBoundingClientRect();
+        
+        // Centrage parfait du menu au-dessus de la mascotte
+        const menuX = Math.max(10, rect.left + (rect.width / 2) - 90);
+        const menuY = Math.max(10, rect.top - 60);
+
+        wheelMenuElement.style.setProperty('left', menuX + 'px', 'important');
+        wheelMenuElement.style.setProperty('top', menuY + 'px', 'important');
+        
+        // C'EST ICI LA CLÉ : on utilise display: flex au lieu de display: block !
+        wheelMenuElement.style.setProperty('display', 'flex', 'important'); 
+        wheelMenuElement.style.setProperty('visibility', 'visible', 'important');
+        
+        // Petit délai pour l'animation d'apparition
+        requestAnimationFrame(() => {
+            wheelMenuElement.style.setProperty('opacity', '1', 'important');
+        });
+    }
+}
+
+function closeWheelMenu() {
+    if (!wheelMenuElement) return;
+    
+    wheelMenuElement.style.setProperty('opacity', '0', 'important');
+    wheelMenuElement.style.setProperty('visibility', 'hidden', 'important');
+    wheelMenuElement.style.setProperty('display', 'none', 'important');
+    
+    // J'ai supprimé "&& !isTeleporting" qui faisait planter le script
+    if (!isRootActive && !isCleanModeActive && !isFollowingMouse) {
+        startWandering();
+    }
+}
+
+function executeAction(action) {
+    if (action === 'follow') {
+        toggleFollowMode();
+    } 
+    else if (action === 'clean') {
+        toggleCleanMode();
+    } 
+    else if (action === 'tp') {
+        teleportRoot();
+    }
+    else if (action === 'hide') {
+        // Désactive le toggle dans le menu popup pour tout le navigateur
+        chrome.storage.local.set({ rootWanderingEnabled: false });
+        
+        // Lance la fonction existante qui fait disparaître Root
+        removeMascot(); 
+    }
+}
+
+// ACTION 2 : MODE NETTOYEUR (Fait disparaître un élément au clic)
+function toggleCleanMode() {
+    isCleanModeActive = !isCleanModeActive;
+    if (isCleanModeActive) {
+        stopWandering(); // CORRECTION : Root s'arrête pendant qu'on nettoie
+        document.body.style.cursor = 'crosshair';
+        document.addEventListener('mouseover', handleCleanHover);
+        document.addEventListener('click', handleCleanClick, true);
+    } else {
+        disableCleanMode();
+    }
+}
+
+function handleCleanHover(e) {
+    if (!isCleanModeActive || e.target.id === 'root-mascot' || e.target.closest('#root-wheel-menu')) return;
+    e.target.classList.add('root-clean-hover');
+    e.target.addEventListener('mouseout', () => e.target.classList.remove('root-clean-hover'), { once: true });
+}
+
+function handleCleanClick(e) {
+    if (!isCleanModeActive) return;
+    if (e.target.id === 'root-mascot' || e.target.closest('#root-wheel-menu')) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    e.target.style.transition = 'all 0.4s ease';
+    e.target.style.transform = 'scale(0) rotate(10deg)';
+    e.target.style.opacity = '0';
+    
+    setTimeout(() => {
+        if (e.target.parentNode) e.target.parentNode.removeChild(e.target);
+    }, 400);
+
+    disableCleanMode();
+}
+
+function disableCleanMode() {
+    isCleanModeActive = false;
+    document.body.style.cursor = 'default';
+    document.querySelectorAll('.root-clean-hover').forEach(el => el.classList.remove('root-clean-hover'));
+    document.removeEventListener('mouseover', handleCleanHover);
+    document.removeEventListener('click', handleCleanClick, true);
+    startWandering();
+}
+
+// ACTION 3 : TÉLÉPORTATION AVEC CONFETTIS
+function teleportRoot() {
     if (!rootElement) return;
     
-    const rect = rootElement.getBoundingClientRect();
-    const currentX = window.scrollX + rect.left;
-    const currentY = window.scrollY + rect.top;
+    stopWandering();
+    spawnParticles();
+
+    const newX = window.scrollX + Math.random() * (window.innerWidth - 120);
+    const newY = window.scrollY + Math.random() * (window.innerHeight - 120);
 
     rootElement.style.setProperty('transition', 'none', 'important');
-    rootElement.style.setProperty('left', currentX + 'px', 'important');
-    rootElement.style.setProperty('top', currentY + 'px', 'important');
+    rootElement.style.setProperty('opacity', '0', 'important');
+
+    setTimeout(() => {
+        rootElement.style.setProperty('left', newX + 'px', 'important');
+        rootElement.style.setProperty('top', newY + 'px', 'important');
+        rootElement.style.setProperty('transition', 'opacity 0.3s ease', 'important');
+        rootElement.style.setProperty('opacity', '1', 'important');
+        spawnParticles();
+        setTimeout(startWandering, 1000);
+    }, 300);
+}
+
+function spawnParticles() {
+    const rect = rootElement.getBoundingClientRect();
+    const centerX = window.scrollX + rect.left + rect.width / 2;
+    const centerY = window.scrollY + rect.top + rect.height / 2;
+
+    for (let i = 0; i < 12; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'root-sparkle';
+        particle.style.left = centerX + 'px';
+        particle.style.top = centerY + 'px';
+
+        const angle = (i / 12) * Math.PI * 2;
+        const dist = 40 + Math.random() * 30;
+        particle.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+        particle.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
+
+        document.body.appendChild(particle);
+        setTimeout(() => particle.remove(), 600);
+    }
+}
+
+// --- FONCTIONS EXISTANTES (Mouvement & Balade) ---
+function freezePosition() {
+    if (!rootElement) return;
+    const rect = rootElement.getBoundingClientRect();
+    rootElement.style.setProperty('transition', 'none', 'important');
+    rootElement.style.setProperty('left', (window.scrollX + rect.left) + 'px', 'important');
+    rootElement.style.setProperty('top', (window.scrollY + rect.top) + 'px', 'important');
 }
 
 function removeMascot() {
     stopWandering();
+    closeWheelMenu();
     if (rootElement) {
         rootElement.style.setProperty('transition', 'opacity 0.5s ease', 'important');
         rootElement.style.setProperty('opacity', '0', 'important');
         setTimeout(() => {
-            if (rootElement && rootElement.parentNode) {
-                rootElement.parentNode.removeChild(rootElement);
-            }
+            if (rootElement && rootElement.parentNode) rootElement.parentNode.removeChild(rootElement);
+            if (wheelMenuElement && wheelMenuElement.parentNode) wheelMenuElement.parentNode.removeChild(wheelMenuElement);
             rootElement = null;
+            wheelMenuElement = null;
             isRootActive = false;
         }, 500);
     }
 }
 
 function startWandering() {
-    if (isRootActive) return;
+    // Évite la démultiplication des déplacements si Root marche déjà
+    if (isRootActive || isCleanModeActive || isWandering || isFollowingMouse) return;
     isWandering = true;
     wanderLoop();
 }
@@ -134,33 +393,32 @@ function walkToRandomPoint() {
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    // MODIFICATION : On a retiré le blocage d'Amazon ici pour que l'interrupteur marche partout.
-
     if (request.action === "toggle_wandering") {
-        if (request.enabled) {
-            initRoot();
-        } else {
-            removeMascot();
-        }
+        if (request.enabled) safeInitRoot();
+        else removeMascot();
         return;
     }
 
-    if (request.action === "start_root" && !isRootActive) {
-        // SÉCURITÉ : Par contre, le scan des prix ne se lance QUE sur Amazon.
+    // J'ai retiré "&& !isRootActive" pour forcer la recherche même si Root était occupé
+    if (request.action === "start_root") {
         if (!isAmazon) return;
-
-        if (!rootElement) {
-            initRoot();
-        }
+        if (!rootElement) safeInitRoot();
 
         stopWandering(); 
+        closeWheelMenu();
         isRootActive = true;
-        rootElement.src = ROOT_THINK_GIF; 
+        if (rootElement) rootElement.src = ROOT_THINK_GIF; 
         
         setTimeout(() => {
             startRootSequence(request.strategy, request.keyword, request.filters);
         }, 1500);
+        
+        // On prévient la popup que le message est bien reçu pour qu'elle se ferme
+        sendResponse({ status: "ok" });
     }
+    
+    // Garde le canal ouvert pour la réponse
+    return true; 
 });
 
 function startRootSequence(strategy, keyword, filters) {
@@ -171,7 +429,6 @@ function startRootSequence(strategy, keyword, filters) {
         winner.scrollIntoView({ behavior: 'smooth', block: 'center' });
         setTimeout(() => { moveToTarget(winner); }, 1000);
     } else {
-        console.log("[Rootine] Aucun produit trouvé correspondant aux critères.");
         rootElement.src = ROOT_THINK_GIF;
         setTimeout(() => {
             isRootActive = false;
@@ -275,4 +532,62 @@ function findBestAmazonProduct(strategy, keyword, filters) {
     }
 
     return chosenProduct.element;
+}
+
+// --- ACTION 1 : MODE SUIVI DE SOURIS ---
+function toggleFollowMode() {
+    isFollowingMouse = !isFollowingMouse;
+    
+    if (isFollowingMouse) {
+        stopWandering(); // Arrête la balade aléatoire
+        walkToMouse();   // Y va une première fois immédiatement
+        
+        // Relance le calcul et le déplacement toutes les 5 secondes (5000 millisecondes)
+        followInterval = setInterval(walkToMouse, 5000);
+    } else {
+        // Désactivation du mode
+        clearInterval(followInterval);
+        followInterval = null;
+        startWandering(); // Reprend sa vie normale
+    }
+}
+
+function walkToMouse() {
+    if (!isFollowingMouse) return;
+    
+    // Utilise la fonction de marche vers la position actuelle de la souris
+    walkToSpecificPoint(mouseX, mouseY, () => {
+        // Une fois arrivé, il attend la prochaine impulsion des 5 secondes
+    });
+}
+
+function walkToSpecificPoint(destX, destY, onComplete) {
+    if (!rootElement) return;
+    
+    const rootRect = rootElement.getBoundingClientRect();
+    const startX = window.scrollX + rootRect.left + (rootRect.width / 2);
+    const startY = window.scrollY + rootRect.top + (rootRect.height / 2);
+
+    // Retourne Root s'il va vers la gauche
+    if (destX < startX) rootElement.classList.add('flip');
+    else rootElement.classList.remove('flip');
+
+    const distance = Math.sqrt(Math.pow(destX - startX, 2) + Math.pow(destY - startY, 2));
+    const duration = distance / ROOT_SPEED;
+
+    rootElement.src = ROOT_WALK_GIF;
+    rootElement.style.setProperty('transition', `top ${duration}s linear, left ${duration}s linear`, 'important');
+
+    window.requestAnimationFrame(() => {
+        // Centre Root sur la position ciblée
+        rootElement.style.setProperty('left', (destX - rootRect.width / 2) + 'px', 'important');
+        rootElement.style.setProperty('top', (destY - rootRect.height / 2) + 'px', 'important');
+    });
+
+    clearTimeout(wanderingTimeout);
+    wanderingTimeout = setTimeout(() => {
+        rootElement.src = ROOT_IDLE_GIF;
+        freezePosition(); // Stoppe l'animation CSS proprement
+        if (onComplete) onComplete();
+    }, duration * 1000);
 }

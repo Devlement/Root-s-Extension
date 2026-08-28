@@ -18,10 +18,94 @@
     width: 64px !important; 
     height: auto !important;
     image-rendering: pixelated !important;
-    opacity: 0;
 }
 
 /* Gère la direction vers laquelle il regarde (droite ou gauche) */
 #root-mascot.flip {
     transform: scaleX(-1) !important;
+}
+
+/* --- MENU D'ACTIONS --- */
+#root-wheel-menu {
+    /* On laisse le JS gérer l'affichage et la position, on s'assure juste qu'il est au-dessus de tout */
+    z-index: 999999 !important;
+}
+
+/* Style des boutons pour éviter qu'Amazon ne les casse */
+.root-wheel-btn {
+    all: unset !important; /* Bloque les styles du site web */
+    width: 36px !important;
+    height: 36px !important;
+    background-color: #2a2a2a !important;
+    border: 1px solid #ffffff !important;
+    border-radius: 4px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    flex-shrink: 0 !important;
+    transition: background-color 0.2s ease, transform 0.1s ease !important;
+}
+
+/* Effet au survol de la souris */
+.root-wheel-btn:hover {
+    background-color: #444444 !important;
+    transform: scale(1.05) !important;
+}
+
+/* Force les icônes SVG à s'afficher en blanc (empêche le texte noir d'Amazon d'affecter le SVG) */
+.root-wheel-btn svg {
+    width: 20px !important;
+    height: 20px !important;
+    display: block !important;
+}
+
+.root-wheel-btn svg path {
+    fill: #ffffff !important;
+}
+
+/* --- ANIMATION D'APPARITION DU MENU --- */
+@keyframes popInMenu {
+    0% { 
+        transform: scale(0.5) translateY(20px); 
+        opacity: 0; 
+    }
+    100% { 
+        transform: scale(1) translateY(0); 
+        opacity: 1; 
+    }
+}
+
+#root-wheel-menu {
+    /* Le menu utilise cette animation à chaque fois qu'il s'affiche */
+    animation: popInMenu 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+}
+
+/* --- ANIMATION DES PARTICULES DE TÉLÉPORTATION --- */
+.root-sparkle {
+    position: absolute !important;
+    width: 10px !important;
+    height: 10px !important;
+    background-color: #ffffff !important;
+    border: 2px solid #FF9900 !important; /* Orange Amazon/Root */
+    border-radius: 50% !important;
+    pointer-events: none !important; /* Pour ne pas gêner les clics */
+    z-index: 999999 !important;
+    
+    /* Animation qui utilise les variables --dx et --dy calculées par content.js */
+    animation: sparkleAnim 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards !important;
+}
+
+@keyframes sparkleAnim {
+    0% { 
+        transform: translate(0, 0) scale(1) rotate(0deg); 
+        opacity: 1; 
+    }
+    100% { 
+        transform: translate(var(--dx), var(--dy)) scale(0) rotate(180deg); 
+        opacity: 0; 
+    }
 }

@@ -51,12 +51,15 @@ document.getElementById('rescan-btn').addEventListener('click', async () => {
 
     let [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (currentTab) {
+        // On ajoute une fonction de callback (response) pour ne fermer la popup que lorsque le message est reçu
         chrome.tabs.sendMessage(currentTab.id, { 
             action: "start_root", 
             strategy: selectedStrategy,
             keyword: keyword,
             filters: options
+        }, (response) => {
+            // La popup se ferme uniquement quand content.js a répondu
+            window.close();
         });
-        window.close();
     }
 });
