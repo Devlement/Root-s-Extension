@@ -16,7 +16,7 @@ let mouseY = 0;
 let isFollowingMouse = false;
 let followInterval = null;
 
-// Écoute en permanence la position de la souris sur la page
+
 document.addEventListener('mousemove', (e) => {
     mouseX = window.scrollX + e.clientX;
     mouseY = window.scrollY + e.clientY;
@@ -25,7 +25,7 @@ document.addEventListener('mousemove', (e) => {
 const ROOT_SPEED = 150; 
 const isAmazon = window.location.hostname.includes("amazon.");
 
-// On attend que la page soit prête avant de lancer Root
+
 chrome.storage.local.get(['rootWanderingEnabled'], (result) => {
     if (result.rootWanderingEnabled) {
         safeInitRoot();
@@ -63,16 +63,16 @@ function createMascot() {
         rootElement.id = 'root-mascot';
         rootElement.src = ROOT_IDLE_GIF;
         
-        // Règles CSS de base
+
         rootElement.style.position = 'absolute';
         rootElement.style.zIndex = '999999';
         rootElement.style.cursor = 'pointer';
         
-        // On force la taille de Root ici !
+
         rootElement.style.width = '80px'; 
         rootElement.style.height = 'auto'; 
         
-        // Règle un éventuel bug de lissage d'image sur les GIF pixel art
+
         rootElement.style.imageRendering = 'pixelated'; 
         
         rootElement.addEventListener('click', (e) => {
@@ -84,14 +84,14 @@ function createMascot() {
     }
 }
 
-// --- CRÉATION DE LA ROUE D'ACTIONS ---
+
 function createWheelMenu() {
     if (wheelMenuElement) return;
 
     wheelMenuElement = document.createElement('div');
     wheelMenuElement.id = 'root-wheel-menu';
     
-    // Le conteneur principal devient lui-même la boîte "flex" indestructible
+
     wheelMenuElement.style.setProperty('position', 'fixed', 'important');
     wheelMenuElement.style.setProperty('display', 'none', 'important'); 
     wheelMenuElement.style.setProperty('z-index', '2147483647', 'important');
@@ -103,7 +103,7 @@ function createWheelMenu() {
     wheelMenuElement.style.setProperty('box-shadow', '0 4px 10px rgba(0,0,0,0.5)', 'important');
     wheelMenuElement.style.setProperty('transition', 'opacity 0.2s ease', 'important');
 
-    // On supprime la <div> intermédiaire qui causait le bug d'écrasement
+
     wheelMenuElement.innerHTML = `
         <button class="root-wheel-btn" data-action="follow" title="Suivre la souris">
             <svg width="20" height="20" viewBox="0 0 10 10" style="image-rendering: pixelated; shape-rendering: crispEdges;"><path d="M1 1h2v1H1zM1 2h3v1H1zM1 3h4v1H1zM1 4h5v1H1zM1 5h6v1H1zM1 6h4v1H1zM1 7h2v1H1zM4 7h1v1H4zM5 8h1v1H5z" fill="#FFFFFF"/></svg>
@@ -121,7 +121,7 @@ function createWheelMenu() {
 
     document.body.appendChild(wheelMenuElement);
 
-    // On forge chaque bouton en JavaScript pour éviter que le site Web ne les modifie
+
     wheelMenuElement.querySelectorAll('.root-wheel-btn').forEach(btn => {
         btn.style.setProperty('background', '#2a2a2a', 'important');
         btn.style.setProperty('border', '1px solid #ffffff', 'important');
@@ -134,7 +134,7 @@ function createWheelMenu() {
         btn.style.setProperty('cursor', 'pointer', 'important');
         btn.style.setProperty('margin', '0', 'important');
         btn.style.setProperty('padding', '0', 'important');
-        btn.style.setProperty('flex-shrink', '0', 'important'); // Empêche le bouton de s'écraser
+        btn.style.setProperty('flex-shrink', '0', 'important');
 
         btn.addEventListener('mouseenter', () => btn.style.setProperty('background', '#444444', 'important'));
         btn.addEventListener('mouseleave', () => btn.style.setProperty('background', '#2a2a2a', 'important'));
@@ -160,7 +160,7 @@ function createWheelMenu() {
 function toggleWheelMenu() {
     if (!wheelMenuElement || !rootElement) return;
     
-    // On vérifie si c'est affiché en flex
+
     const isVisible = wheelMenuElement.style.getPropertyValue('display') === 'flex';
     
     if (isVisible) {
@@ -169,18 +169,18 @@ function toggleWheelMenu() {
         stopWandering();
         const rect = rootElement.getBoundingClientRect();
         
-        // Centrage parfait du menu au-dessus de la mascotte
+
         const menuX = Math.max(10, rect.left + (rect.width / 2) - 90);
         const menuY = Math.max(10, rect.top - 60);
 
         wheelMenuElement.style.setProperty('left', menuX + 'px', 'important');
         wheelMenuElement.style.setProperty('top', menuY + 'px', 'important');
         
-        // C'EST ICI LA CLÉ : on utilise display: flex au lieu de display: block !
+
         wheelMenuElement.style.setProperty('display', 'flex', 'important'); 
         wheelMenuElement.style.setProperty('visibility', 'visible', 'important');
         
-        // Petit délai pour l'animation d'apparition
+
         requestAnimationFrame(() => {
             wheelMenuElement.style.setProperty('opacity', '1', 'important');
         });
@@ -194,7 +194,7 @@ function closeWheelMenu() {
     wheelMenuElement.style.setProperty('visibility', 'hidden', 'important');
     wheelMenuElement.style.setProperty('display', 'none', 'important');
     
-    // J'ai supprimé "&& !isTeleporting" qui faisait planter le script
+
     if (!isRootActive && !isCleanModeActive && !isFollowingMouse) {
         startWandering();
     }
@@ -211,19 +211,19 @@ function executeAction(action) {
         teleportRoot();
     }
     else if (action === 'hide') {
-        // Désactive le toggle dans le menu popup pour tout le navigateur
+
         chrome.storage.local.set({ rootWanderingEnabled: false });
         
-        // Lance la fonction existante qui fait disparaître Root
+
         removeMascot(); 
     }
 }
 
-// ACTION 2 : MODE NETTOYEUR (Fait disparaître un élément au clic)
+
 function toggleCleanMode() {
     isCleanModeActive = !isCleanModeActive;
     if (isCleanModeActive) {
-        stopWandering(); // CORRECTION : Root s'arrête pendant qu'on nettoie
+        stopWandering();
         document.body.style.cursor = 'crosshair';
         document.addEventListener('mouseover', handleCleanHover);
         document.addEventListener('click', handleCleanClick, true);
@@ -265,7 +265,7 @@ function disableCleanMode() {
     startWandering();
 }
 
-// ACTION 3 : TÉLÉPORTATION AVEC CONFETTIS
+
 function teleportRoot() {
     if (!rootElement) return;
     
@@ -309,7 +309,7 @@ function spawnParticles() {
     }
 }
 
-// --- FONCTIONS EXISTANTES (Mouvement & Balade) ---
+
 function freezePosition() {
     if (!rootElement) return;
     const rect = rootElement.getBoundingClientRect();
@@ -335,7 +335,7 @@ function removeMascot() {
 }
 
 function startWandering() {
-    // Évite la démultiplication des déplacements si Root marche déjà
+
     if (isRootActive || isCleanModeActive || isWandering || isFollowingMouse) return;
     isWandering = true;
     wanderLoop();
@@ -399,7 +399,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return;
     }
 
-    // J'ai retiré "&& !isRootActive" pour forcer la recherche même si Root était occupé
+
     if (request.action === "start_root") {
         if (!isAmazon) return;
         if (!rootElement) safeInitRoot();
@@ -413,11 +413,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             startRootSequence(request.strategy, request.keyword, request.filters);
         }, 1500);
         
-        // On prévient la popup que le message est bien reçu pour qu'elle se ferme
+
         sendResponse({ status: "ok" });
     }
     
-    // Garde le canal ouvert pour la réponse
+
     return true; 
 });
 
@@ -534,30 +534,30 @@ function findBestAmazonProduct(strategy, keyword, filters) {
     return chosenProduct.element;
 }
 
-// --- ACTION 1 : MODE SUIVI DE SOURIS ---
+
 function toggleFollowMode() {
     isFollowingMouse = !isFollowingMouse;
     
     if (isFollowingMouse) {
-        stopWandering(); // Arrête la balade aléatoire
-        walkToMouse();   // Y va une première fois immédiatement
+        stopWandering();
+        walkToMouse();
         
-        // Relance le calcul et le déplacement toutes les 5 secondes (5000 millisecondes)
+
         followInterval = setInterval(walkToMouse, 5000);
     } else {
-        // Désactivation du mode
+
         clearInterval(followInterval);
         followInterval = null;
-        startWandering(); // Reprend sa vie normale
+        startWandering();
     }
 }
 
 function walkToMouse() {
     if (!isFollowingMouse) return;
     
-    // Utilise la fonction de marche vers la position actuelle de la souris
+
     walkToSpecificPoint(mouseX, mouseY, () => {
-        // Une fois arrivé, il attend la prochaine impulsion des 5 secondes
+
     });
 }
 
@@ -568,7 +568,7 @@ function walkToSpecificPoint(destX, destY, onComplete) {
     const startX = window.scrollX + rootRect.left + (rootRect.width / 2);
     const startY = window.scrollY + rootRect.top + (rootRect.height / 2);
 
-    // Retourne Root s'il va vers la gauche
+
     if (destX < startX) rootElement.classList.add('flip');
     else rootElement.classList.remove('flip');
 
@@ -579,7 +579,7 @@ function walkToSpecificPoint(destX, destY, onComplete) {
     rootElement.style.setProperty('transition', `top ${duration}s linear, left ${duration}s linear`, 'important');
 
     window.requestAnimationFrame(() => {
-        // Centre Root sur la position ciblée
+
         rootElement.style.setProperty('left', (destX - rootRect.width / 2) + 'px', 'important');
         rootElement.style.setProperty('top', (destY - rootRect.height / 2) + 'px', 'important');
     });
@@ -587,7 +587,7 @@ function walkToSpecificPoint(destX, destY, onComplete) {
     clearTimeout(wanderingTimeout);
     wanderingTimeout = setTimeout(() => {
         rootElement.src = ROOT_IDLE_GIF;
-        freezePosition(); // Stoppe l'animation CSS proprement
+        freezePosition();
         if (onComplete) onComplete();
     }, duration * 1000);
 }

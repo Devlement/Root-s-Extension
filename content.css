@@ -67,7 +67,6 @@
     fill: #ffffff !important;
 }
 
-/* --- ANIMATION D'APPARITION DU MENU --- */
 @keyframes popInMenu {
     0% { 
         transform: scale(0.5) translateY(20px); 
@@ -80,22 +79,22 @@
 }
 
 #root-wheel-menu {
-    /* Le menu utilise cette animation à chaque fois qu'il s'affiche */
+    
     animation: popInMenu 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
 }
 
-/* --- ANIMATION DES PARTICULES DE TÉLÉPORTATION --- */
+
 .root-sparkle {
     position: absolute !important;
     width: 10px !important;
     height: 10px !important;
     background-color: #ffffff !important;
-    border: 2px solid #FF9900 !important; /* Orange Amazon/Root */
+    border: 2px solid #FF9900 !important; 
     border-radius: 50% !important;
-    pointer-events: none !important; /* Pour ne pas gêner les clics */
+    pointer-events: none !important; 
     z-index: 999999 !important;
     
-    /* Animation qui utilise les variables --dx et --dy calculées par content.js */
+    
     animation: sparkleAnim 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards !important;
 }
 

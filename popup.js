@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         notAmazonScreen.classList.add('flex-col');
     }
 
-    // --- Gestion de l'interrupteur (accessible partout) ---
+
     const summonToggle = document.getElementById('summon-toggle');
     
     chrome.storage.local.get(['rootWanderingEnabled'], (result) => {
@@ -21,14 +21,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     summonToggle.addEventListener('change', async (e) => {
         const isEnabled = e.target.checked;
-        
-        // On sauvegarde le choix en mémoire (fonctionne sur n'importe quel site)
         chrome.storage.local.set({ rootWanderingEnabled: isEnabled });
         
         let [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (currentTab) {
-            // On essaie d'avertir la page actuelle. 
-            // Si on n'est pas sur Amazon, le script de la page ne répondra pas, on ignore l'erreur.
             chrome.tabs.sendMessage(currentTab.id, { 
                 action: "toggle_wandering", 
                 enabled: isEnabled 
@@ -51,14 +47,12 @@ document.getElementById('rescan-btn').addEventListener('click', async () => {
 
     let [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (currentTab) {
-        // On ajoute une fonction de callback (response) pour ne fermer la popup que lorsque le message est reçu
         chrome.tabs.sendMessage(currentTab.id, { 
             action: "start_root", 
             strategy: selectedStrategy,
             keyword: keyword,
             filters: options
         }, (response) => {
-            // La popup se ferme uniquement quand content.js a répondu
             window.close();
         });
     }

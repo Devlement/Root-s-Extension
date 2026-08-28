@@ -1,4 +1,3 @@
-/* --- Variables Globales --- */
 :root {
     --amazon-dark: #131A22;
     --amazon-light: #232F3E;
@@ -28,7 +27,6 @@ body {
     align-items: center;
 }
 
-/* --- En-tête & Logo --- */
 .logo-container {
     width: 100%;
     display: flex;
@@ -43,7 +41,6 @@ body {
     filter: drop-shadow(0 4px 15px rgba(255, 153, 0, 0.15));
 }
 
-/* --- Utilitaires --- */
 .w-full { width: 100%; }
 .hidden { display: none !important; }
 .block { display: block !important; }
@@ -59,7 +56,7 @@ body {
     color: var(--amazon-muted);
 }
 
-/* --- Inputs & Formulaires --- */
+
 .search-box {
     width: 100%;
     color: white;
@@ -79,7 +76,7 @@ body {
 
 .search-box::placeholder { color: var(--amazon-muted); }
 
-/* --- Grille des Stratégies --- */
+
 .strategy-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -113,7 +110,7 @@ body {
     border-color: var(--root-orange);
 }
 
-/* --- Conteneur Filtres Scrollable --- */
+
 .options-container {
     border-radius: 8px;
     padding: 12px;
@@ -164,7 +161,7 @@ body {
     background-color: #4a5a6a;
 }
 
-/* --- Interrupteur (Toggle) --- */
+
 .toggle-container {
     width: 100%;
     display: flex;
@@ -225,7 +222,7 @@ input:checked + .slider:before {
     transform: translateX(20px);
 }
 
-/* --- Boutons --- */
+
 .btn-primary {
     width: 100%;
     border: none;
@@ -267,7 +264,7 @@ input:checked + .slider:before {
     color: var(--amazon-dark);
 }
 
-/* --- Carte d'erreur --- */
+
 .error-card {
     border-radius: 12px;
     padding: 24px;
