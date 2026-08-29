@@ -396,12 +396,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "toggle_wandering") {
         if (request.enabled) safeInitRoot();
         else removeMascot();
-        return;
+        
+        // CORRECTION : On rassure Chrome en lui confirmant que l'action est faite
+        sendResponse({ status: "ok" }); 
+        return true;
     }
 
-
     if (request.action === "start_root") {
-        if (!isAmazon) return;
+        if (!isAmazon) {
+            // CORRECTION : On répond à Chrome même si on annule l'action
+            sendResponse({ status: "ignored" }); 
+            return true;
+        }
         if (!rootElement) safeInitRoot();
 
         stopWandering(); 
@@ -413,11 +419,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             startRootSequence(request.strategy, request.keyword, request.filters);
         }, 1500);
         
-
         sendResponse({ status: "ok" });
     }
     
-
     return true; 
 });
 
@@ -440,20 +444,31 @@ function startRootSequence(strategy, keyword, filters) {
 function moveToTarget(targetElement) {
     if (!rootElement || !targetElement) return;
 
+    // Récupération des dimensions du produit et de la mascotte
     const rect = targetElement.getBoundingClientRect();
-    const destX = Math.max(0, window.scrollX + rect.left - 10); 
-    const destY = Math.max(0, window.scrollY + rect.top - 40); 
-
     const rootRect = rootElement.getBoundingClientRect();
+
+    // Calcul du centre de la carte du produit
+    const targetCenterX = window.scrollX + rect.left + (rect.width / 2);
+    const targetTopY = window.scrollY + rect.top;
+
+    // On centre Root pile au-dessus du produit (on soustrait la moitié de sa largeur)
+    // Le +20 permet à Root de "mordre" légèrement sur le cadre orange pour être bien visible
+    const destX = Math.max(0, targetCenterX - (rootRect.width / 2));
+    const destY = Math.max(0, targetTopY - rootRect.height + 20); 
+
     const startX = window.scrollX + rootRect.left;
     const startY = window.scrollY + rootRect.top;
 
+    // Gestion du retournement (pour qu'il regarde dans la bonne direction)
     if (destX < startX) rootElement.classList.add('flip');
     else rootElement.classList.remove('flip');
 
     const searchSpeed = ROOT_SPEED * 3;
     const distance = Math.sqrt(Math.pow(destX - startX, 2) + Math.pow(destY - startY, 2));
-    const duration = distance / searchSpeed;
+    
+    // Sécurité : on s'assure que l'animation dure au moins 0.5s pour éviter les téléportations étranges
+    const duration = Math.max(0.5, distance / searchSpeed);
 
     rootElement.src = ROOT_WALK_GIF;
     rootElement.style.setProperty('transition', `top ${duration}s ease-in-out, left ${duration}s ease-in-out`, 'important');

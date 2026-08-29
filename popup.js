@@ -14,24 +14,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const summonToggle = document.getElementById('summon-toggle');
     
-    // NOUVEAU : On récupère 'rootSettings' (les filtres) en plus de 'rootWanderingEnabled' (le mode balade)
     chrome.storage.local.get(['rootWanderingEnabled', 'rootSettings'], (result) => {
-        // Restauration du mode balade
         summonToggle.checked = !!result.rootWanderingEnabled;
 
-        // Restauration des choix de Rootine s'ils existent dans la mémoire
         if (result.rootSettings) {
-            // 1. Restaurer la stratégie
             const strategyRadio = document.querySelector(`input[name="strategy"][value="${result.rootSettings.strategy}"]`);
             if (strategyRadio) strategyRadio.checked = true;
 
-            // 2. Restaurer le mot-clé (s'il existe dans le HTML)
             const keywordNode = document.getElementById('keyword-input');
             if (keywordNode && result.rootSettings.keyword !== undefined) {
                 keywordNode.value = result.rootSettings.keyword;
             }
 
-            // 3. Restaurer tous les filtres
             const filters = result.rootSettings.filters || {};
             if (document.getElementById('opt-prime')) document.getElementById('opt-prime').checked = !!filters.primeOnly;
             if (document.getElementById('opt-nosponsor')) document.getElementById('opt-nosponsor').checked = !!filters.noSponsored;
@@ -48,26 +42,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         let [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (currentTab) {
-            chrome.tabs.sendMessage(currentTab.id, { 
-                action: "toggle_wandering", 
-                enabled: isEnabled 
-            }).catch(() => {
+            try {
+                await sendOrInjectMessage(currentTab.id, { 
+                    action: "toggle_wandering", 
+                    enabled: isEnabled 
+                });
+            } catch (err) {
                 console.log("Choix sauvegardé en attente d'aller sur Amazon.");
-            });
+            }
         }
     });
 });
 
 document.getElementById('rescan-btn').addEventListener('click', async () => {
-    // 1. Récupération sécurisée de la stratégie
     const strategyNode = document.querySelector('input[name="strategy"]:checked');
     const selectedStrategy = strategyNode ? strategyNode.value : 'cheapest';
 
-    // 2. Récupération sécurisée du mot-clé
     const keywordNode = document.getElementById('keyword-input');
     const keyword = keywordNode ? keywordNode.value.trim() : "";
 
-    // 3. Récupération sécurisée de tous les filtres (même les nouveaux)
     const options = {
         primeOnly: document.getElementById('opt-prime') ? document.getElementById('opt-prime').checked : false,
         noSponsored: document.getElementById('opt-nosponsor') ? document.getElementById('opt-nosponsor').checked : false,
@@ -77,8 +70,7 @@ document.getElementById('rescan-btn').addEventListener('click', async () => {
         isBasics: document.getElementById('opt-basics') ? document.getElementById('opt-basics').checked : false
     };
 
-    // NOUVEAU : Sauvegarde des choix dans le stockage local de Chrome
-    chrome.storage.local.set({
+    await chrome.storage.local.set({
         rootSettings: {
             strategy: selectedStrategy,
             keyword: keyword,
@@ -86,20 +78,30 @@ document.getElementById('rescan-btn').addEventListener('click', async () => {
         }
     });
 
-    // 4. Envoi du message à l'onglet actif
     let [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (currentTab) {
-        chrome.tabs.sendMessage(currentTab.id, { 
-            action: "start_root", 
-            strategy: selectedStrategy,
-            keyword: keyword,
-            filters: options
-        }, (response) => {
-            if (chrome.runtime.lastError) {
-                console.error("Erreur de communication : Recharge ta page Amazon !");
-            } else {
-                window.close();
-            }
-        });
+        try {
+            await sendOrInjectMessage(currentTab.id, { 
+                action: "start_root", 
+                strategy: selectedStrategy,
+                keyword: keyword,
+                filters: options
+            });
+            window.close();
+        } catch (error) {
+            console.error("Impossible d'exécuter la commande sur cette page :", error);
+        }
     }
 });
+
+// Envoie le message ou injecte le content script si le canal est coupé
+async function sendOrInjectMessage(tabId, message) {
+    try {
+        return await chrome.tabs.sendMessage(tabId, message);
+    } catch (err) {
+        await chrome.scripting.insertCSS({ target: { tabId }, files: ["content.css"] });
+        await chrome.scripting.executeScript({ target: { tabId }, files: ["content.js"] });
+        await new Promise(res => setTimeout(res, 150));
+        return await chrome.tabs.sendMessage(tabId, message);
+    }
+}
