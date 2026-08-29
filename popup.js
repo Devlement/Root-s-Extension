@@ -36,15 +36,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 document.getElementById('rescan-btn').addEventListener('click', async () => {
-    const selectedStrategy = document.querySelector('input[name="strategy"]:checked').value;
-    const keyword = document.getElementById('keyword-input').value.trim();
+    // 1. Récupération sécurisée de la stratégie
+    const strategyNode = document.querySelector('input[name="strategy"]:checked');
+    const selectedStrategy = strategyNode ? strategyNode.value : 'cheapest';
 
+    // 2. Récupération sécurisée du mot-clé (sans planter s'il n'existe pas)
+    const keywordNode = document.getElementById('keyword-input');
+    const keyword = keywordNode ? keywordNode.value.trim() : "";
+
+    // 3. Récupération sécurisée des filtres
     const options = {
-        primeOnly: document.getElementById('opt-prime').checked,
-        noSponsored: document.getElementById('opt-nosponsor').checked,
-        minFourStars: document.getElementById('opt-stars').checked
+        primeOnly: document.getElementById('opt-prime') ? document.getElementById('opt-prime').checked : false,
+        noSponsored: document.getElementById('opt-nosponsor') ? document.getElementById('opt-nosponsor').checked : false,
+        minFourStars: document.getElementById('opt-stars') ? document.getElementById('opt-stars').checked : false
     };
 
+    // 4. Envoi du message à l'onglet actif
     let [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (currentTab) {
         chrome.tabs.sendMessage(currentTab.id, { 
@@ -53,7 +60,12 @@ document.getElementById('rescan-btn').addEventListener('click', async () => {
             keyword: keyword,
             filters: options
         }, (response) => {
-            window.close();
+            // Si la page Amazon n'est pas prête à recevoir le message
+            if (chrome.runtime.lastError) {
+                console.error("Erreur de communication : Recharge ta page Amazon !");
+            } else {
+                window.close(); // Ferme le popup si l'ordre est bien passé
+            }
         });
     }
 });
